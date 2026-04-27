@@ -3,11 +3,12 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include "tokens.hpp"
 
 struct Rule{
     Token LHS;
-    Token* RHS;
+    std::vector<Token> RHS;
 };
 
 #endif

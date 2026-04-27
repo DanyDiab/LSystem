@@ -1,6 +1,10 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#include <string>
+
+using namespace std;
+
 enum class Token {
     F,
     G,
@@ -21,7 +25,6 @@ enum class Token {
     DrawPolygon
 };
 
-#endif
 
 // F: Move forward by distance d and draw a line.
 // G: Move forward by distance d and draw a line (distinct variable for logic).
@@ -40,3 +43,27 @@ enum class Token {
 // IncreaseWidth (#): Increase the current line thickness.
 // NextColor ('): Increment the drawing color index.
 // DrawPolygon (@): Draw a predefined polygon/sprite at the current position.
+
+
+static const std::unordered_map<std::string, Token> tokenMap = {
+    {"F", Token::F},
+    {"G", Token::G},
+    {"f", Token::f},
+    {"Z", Token::Z},
+    {"+", Token::TurnLeft},
+    {"-", Token::TurnRight},
+    {"|", Token::TurnAround},
+    {"&", Token::PitchDown},
+    {"^", Token::PitchUp},
+    {"\\", Token::RollLeft},
+    {"/", Token::RollRight},
+    {"[", Token::PushState},
+    {"]", Token::PopState},
+    {"!", Token::DecreaseWidth},
+    {"#", Token::IncreaseWidth},
+    {"'", Token::NextColor},
+    {"@", Token::DrawPolygon}
+};
+
+#endif
+
