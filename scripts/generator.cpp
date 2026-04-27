@@ -36,6 +36,19 @@ std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRul
     return recurExpand(nextTokens,rules,numRules, depth+1);
 }
 
+int writeInstructionsToJSON(std::vector<Token> tokens){
+    json data;
+    data["instructions"] = tokens;
+
+    std::ofstream outputFile("./instructions.json");
+
+    if(!outputFile.is_open()) return 1;
+
+    outputFile << data.dump(4);
+    outputFile.close();
+    return 0;
+}
+
 std::vector<Token> generateExpansion(std::tuple<std::vector<Token>, Rule**, int, int> data){
     
 
@@ -127,14 +140,7 @@ int main(int argc, char** argv){
     std::tuple<std::vector<Token>, Rule**, int, int> tokenizedData = tokenize(data);
     std::vector<Token> expanded = generateExpansion(tokenizedData);
 
-    for(const auto& token : expanded){
-        std::cout << "token: " << static_cast<int>(token) << "\n";
-    }
+    writeInstructionsToJSON(expanded);
+    
     return 0;
 }
-
-
-// read in JSON
-// convert to a token Axoim and an array of Rules
-// recursivly match the current token to the LHS of rules, when matching, swap it with RHS
-// continue until a certain depth is reached
