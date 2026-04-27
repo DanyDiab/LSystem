@@ -11,24 +11,26 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 3;
+int MAXDEPTH = 2;
 
 std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;
     std::vector<Token> nextTokens;
-
+    
     for(const auto& token : curr){
+        bool foundExpansion = false;
         for(int i = 0 ; i < numRules; i++){
             Rule* rule = rules[i];
             if(rule->LHS == token){
                 std::vector<Token> RHS = rule->RHS;
                 for(const auto& rhsToken : RHS){
                     nextTokens.push_back(rhsToken);
+                    foundExpansion = true;
                 }
                 break;
             }
         }
-        nextTokens.push_back(token);
+        if(!foundExpansion) nextTokens.push_back(token);
     }
 
     return recurExpand(nextTokens,rules,numRules, depth+1);
@@ -55,7 +57,11 @@ std::tuple<string, std::map<std::string, std::string>, int> parseJSON(){
     std::map<std::string, std::string> rules;
     int theta = 0;
 
-    if (!file.is_open()) return std::make_tuple(axiom, rules, theta);;
+    if (!file.is_open()){
+        cout << "file was not found or didnt open";
+        return std::make_tuple(axiom, rules, theta);
+    } 
+
     json parsedData;
     file >> parsedData;
 
