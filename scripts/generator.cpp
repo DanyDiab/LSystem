@@ -11,9 +11,39 @@
 using namespace std;
 using json = nlohmann::json;
 
+int MAXDEPTH = 3;
 
-string generateExpansion(string axiom, std::map<std::string, std::string>){
-    return "test";
+std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRules, int depth){
+    if(depth == MAXDEPTH) return curr;
+    std::vector<Token> nextTokens;
+
+    for(const auto& token : curr){
+        for(int i = 0 ; i < numRules; i++){
+            Rule* rule = rules[i];
+            if(rule->LHS == token){
+                std::vector<Token> RHS = rule->RHS;
+                for(const auto& rhsToken : RHS){
+                    nextTokens.push_back(rhsToken);
+                }
+                break;
+            }
+        }
+        nextTokens.push_back(token);
+    }
+
+    return recurExpand(nextTokens,rules,numRules, depth+1);
+}
+
+std::vector<Token> generateExpansion(std::tuple<Token, Rule**, int, int> data){
+    
+
+    Token axiom = std::get<0>(data);
+    Rule** rules = std::get<1>(data);
+    int numRules = std::get<3>(data);
+
+    std::vector<Token> curr = {axiom};
+
+    return recurExpand(curr,rules,numRules,0);
 }
 
 // <axiom, rules>
@@ -115,6 +145,11 @@ int main(int argc, char** argv){
     std::tuple<string, std::map<std::string, std::string>, int> data = parseJSON();
     std::tuple<Token, Rule**, int, int> tokenizedData = tokenize(data);
     printTokenizedData(tokenizedData);
+    std::vector<Token> expanded = generateExpansion(tokenizedData);
+
+    for(const auto& token : expanded){
+        std::cout << "token: " << static_cast<int>(token) << "\n";
+    }
     return 0;
 }
 

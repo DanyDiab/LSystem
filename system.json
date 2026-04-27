@@ -1,6 +1,6 @@
 {
-    "axiom" : "F",
     "rules" : {
+        "axiom" : "F",
         "F" : "F + F"
     },
     "theta" : 90
