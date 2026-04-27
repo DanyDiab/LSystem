@@ -1,5 +1,5 @@
 #include <iostream>
-#include "./headers/freeglut.h"
+#include <freeglut/freeglut.h>
 using namespace std;
 
 void update(){

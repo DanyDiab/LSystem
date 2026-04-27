@@ -2,7 +2,7 @@
 #include <string>
 #include <fstream>
 #include <utility>
-#include "./headers/imports/json.hpp"
+#include <nlohmann/json.hpp>
 #include "./headers/tokens.hpp"
 #include "./headers/rules.hpp"
 #include <vector>
@@ -11,7 +11,7 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 2;
+int MAXDEPTH = 6;
 
 std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;
