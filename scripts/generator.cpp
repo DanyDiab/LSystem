@@ -36,16 +36,15 @@ std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRul
     return recurExpand(nextTokens,rules,numRules, depth+1);
 }
 
-std::vector<Token> generateExpansion(std::tuple<Token, Rule**, int, int> data){
+std::vector<Token> generateExpansion(std::tuple<std::vector<Token>, Rule**, int, int> data){
     
 
-    Token axiom = std::get<0>(data);
+    std::vector<Token> axiom = std::get<0>(data);
     Rule** rules = std::get<1>(data);
     int numRules = std::get<3>(data);
 
-    std::vector<Token> curr = {axiom};
 
-    return recurExpand(curr,rules,numRules,0);
+    return recurExpand(axiom,rules,numRules,0);
 }
 
 // <axiom, rules>
@@ -86,14 +85,20 @@ std::vector<std::string> splitStringBySpace(std::string stringToSplit){
     return split;
 }
 
-std::tuple<Token, Rule**, int, int> tokenize(std::tuple<std::string, std::map<std::string, std::string>, int> inputData) {
+std::tuple<std::vector<Token>, Rule**, int, int> tokenize(std::tuple<std::string, std::map<std::string, std::string>, int> inputData) {
     std::string axiomString = std::get<0>(inputData);
     std::map<std::string, std::string> rules = std::get<1>(inputData);
     int theta = std::get<2>(inputData);
 
-
-    Token axiomToken = tokenMap.at(axiomString);
+    std::vector<Token> axiomTokens;
+    std::vector<std::string> axiomSplit = splitStringBySpace(axiomString);
+// tokenize the axiom
+    for(const auto& axiomTokenString : axiomSplit){
+        Token axiomToken = tokenMap.at(axiomTokenString);
+        axiomTokens.push_back(axiomToken);
+    }
     
+    // create rules
     Rule **tokenRules = new Rule*[rules.size()];
     
     int ruleCount = 0;
@@ -101,9 +106,10 @@ std::tuple<Token, Rule**, int, int> tokenize(std::tuple<std::string, std::map<st
         Rule *rule = new Rule;
         Token LHS = tokenMap.at(key);
         rule->LHS = LHS;
-
+        // split RHS
         std::vector<std::string> RHSSplit = splitStringBySpace(value);
         std::vector<Token> RHS;
+        // add each token
         for(const auto& strTok : RHSSplit){
             Token token = tokenMap.at(strTok);
             RHS.push_back(token);
@@ -112,45 +118,13 @@ std::tuple<Token, Rule**, int, int> tokenize(std::tuple<std::string, std::map<st
         tokenRules[ruleCount] = rule;
         ruleCount++;
     }
-    return std::make_tuple(axiomToken,tokenRules,theta, rules.size());
-}
-
-
-void printTokenizedData(const std::tuple<Token, Rule**, int, int>& tokenizedData) {
-    Token axiom = std::get<0>(tokenizedData);
-    Rule** rules = std::get<1>(tokenizedData);
-    int theta = std::get<2>(tokenizedData);
-    int numRules = std::get<3>(tokenizedData);
-
-    std::cout << "Axiom: " << static_cast<int>(axiom) << "\n";
-    std::cout << "Theta: " << theta << "\n";
-
-
-    for(int i = 0; i < numRules; i++) {
-        Rule* currRule = rules[i];
-
-        Token LHS = currRule->LHS;
-        std::vector<Token> RHS = currRule->RHS;
-
-        std::cout << "LHS: " << static_cast<int>(LHS) << " -> RHS: [";
-        
-        for (size_t j = 0; j < RHS.size(); j++) {
-            std::cout << static_cast<int>(RHS[j]);
-            
-            if (j < RHS.size() - 1) {
-                std::cout << ", ";
-            }
-        }
-        
-        std::cout << "]\n";
-    }    
+    return std::make_tuple(axiomTokens,tokenRules,theta, rules.size());
 }
 
 
 int main(int argc, char** argv){
     std::tuple<string, std::map<std::string, std::string>, int> data = parseJSON();
-    std::tuple<Token, Rule**, int, int> tokenizedData = tokenize(data);
-    printTokenizedData(tokenizedData);
+    std::tuple<std::vector<Token>, Rule**, int, int> tokenizedData = tokenize(data);
     std::vector<Token> expanded = generateExpansion(tokenizedData);
 
     for(const auto& token : expanded){

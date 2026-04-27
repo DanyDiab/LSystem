@@ -1,8 +1,9 @@
 {
-    "axiom" : "F",
+    "axiom" : "F - G - G",
     "rules" : {
-        "F" : "F + F"
+        "F" : "F - G + F + G - F",
+        "G" : "G G"
     },
-    "theta" : 90
+    "theta" : 120
 }
 
