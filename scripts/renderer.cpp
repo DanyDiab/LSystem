@@ -5,17 +5,36 @@
 #include <nlohmann/json.hpp>
 #include "./headers/rules.hpp"
 #include "./headers/tokens.hpp"
-
+#include <GL/glut.h>
 
 using namespace std;
 using json = nlohmann::json;
 
 std::string filePath = "./instructions.json";
 
+const int length = 2;
+const float DEGTORAD = 0.01745329f;
+
+void drawLine(int x, int y, float length, int theta){
+    int endX = cos((90 - theta) * DEGTORAD) * length;
+    int endY = sin((90 - theta) * DEGTORAD) * length;
+    glLineWidth(10);
+    glColor3f(1.0,1.0,1.0);
+    glBegin(GL_LINES);
+        glVertex2f(x, y);
+        glVertex2f(endX,  endY);
+    glEnd();
+
+    glFlush(); 
+}
+
 void update(){
     glutSwapBuffers();
     glutPostRedisplay();
+    drawLine(0,0,10,0);
 }
+
+
 
 
 
