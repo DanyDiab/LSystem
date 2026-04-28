@@ -12,61 +12,111 @@ using json = nlohmann::json;
 
 std::string filePath = "./instructions.json";
 
-const int length = 2;
+const int length = 5;
 const float DEGTORAD = 0.01745329f;
+int thetaDelta = 0;
 
+
+int windowWidth = 1000;
+int windowHeight = 1000;
+
+std::vector<Token> instructions;
 struct Turtle {
-    int x;
-    int y;
-    int theta;
+    float x;
+    float y;
+    float theta;
 };
 
 Turtle turtle;
 Turtle nextTurtle;
 
+void initCamera(int width, int height, float camX, float camY, float projectionScale) {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    glViewport(0, 0, width, height);
+
+    float halfWidth = ((float)width * projectionScale) / 2.0f;
+    float halfHeight = ((float)height * projectionScale) / 2.0f;
+    glOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, 1.0f, -1.0f);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glTranslatef(-camX, -camY, 0.0f);
+}
+
 void init(){
     turtle = {0, 0, 0};
     nextTurtle = {0, 0, 0};
+    initCamera(windowWidth,windowHeight,0 ,0, 3.0f);
 }
 
-void moveTurtleForward(Turtle turtle){
-    int theta = turtle.theta;
+void moveTurtleForward(Turtle *turtle){
+    int theta = turtle->theta;
     float offsetX = cos((90 - theta) * DEGTORAD) * length;
     float offsetY = sin((90 - theta) * DEGTORAD) * length;
 
-    float endX = offsetX + turtle.x;
-    float endY = offsetY + turtle.y;
+    float endX = offsetX + turtle->x;
+    float endY = offsetY + turtle->y;
 
-    turtle.x = endX;
-    turtle.y = endY;
+    turtle->x = endX;
+    turtle->y = endY;
 }
+
+
+void drawLineBetweenTurtles(Turtle turtle1, Turtle turtle2){
+    float startX = turtle1.x;
+    float startY = turtle1.y;
+
+    float endX = turtle2.x;
+    float endY = turtle2.y;
+
+    glLineWidth(1);
+    glColor3f(1.0,1.0,1.0);
+    glBegin(GL_LINES);
+        glVertex2f(startX, startY);
+        glVertex2f(endX, endY);
+    glEnd();
+
+    glFlush(); 
+}
+
 
 void executeInstruction(Token token){
     switch (token) {
         case Token::F: {
-            moveTurtleForward(nextTurtle);
+            moveTurtleForward(&nextTurtle);
             drawLineBetweenTurtles(turtle,nextTurtle);
             break;
         }
         case Token::G: {
-            moveTurtleForward(nextTurtle);
+            moveTurtleForward(&nextTurtle);
             drawLineBetweenTurtles(turtle,nextTurtle);
             break;
         }
         case Token::f: {
-            moveTurtleForward(nextTurtle);
+            moveTurtleForward(&nextTurtle);
+            break;
+        }
+        case Token::g: {
+            moveTurtleForward(&nextTurtle);
             break;
         }
         case Token::Z: {
             break;
         }
         case Token::TurnLeft: {
+            nextTurtle.theta -= thetaDelta;
             break;
         }
         case Token::TurnRight: {
+
+            nextTurtle.theta += thetaDelta;
             break;
         }
         case Token::TurnAround: {
+            nextTurtle.theta += 180;
             break;
         }
         case Token::PitchDown: {
@@ -100,60 +150,55 @@ void executeInstruction(Token token){
             break;
         }
         default: {
+            cout << "defaulting" << "\n";
+
             break;
         }
     }
 }
 
-void drawLineBetweenTurtles(Turtle turtle1, Turtle turtle2){
-    int startX = turtle1.x;
-    int startY = turtle1.y;
 
-    int endX = turtle2.x;
-    int endY = turtle2.y;
-    glLineWidth(10);
-    glColor3f(1.0,1.0,1.0);
-    glBegin(GL_LINES);
-        glVertex2f(startX, startY);
-        glVertex2f(endX, endY);
-    glEnd();
+void executeInstructions(){
+    for(const auto& instruction : instructions){
+        executeInstruction(instruction);
+        turtle = nextTurtle;
+    }
 
-    glFlush(); 
+    turtle = {0, 0, 0};
+    nextTurtle = turtle;
 }
+
 
 void update(){
     glutSwapBuffers();
+    executeInstructions();
     glutPostRedisplay();
 }
 
-std::vector<Token> readInJSON(){
+void readInJSON(){
     std::ifstream file(filePath);
 
-    std::vector<Token> instructions;
     if(!file.is_open()){
         cout << "could not read in instructions";
-        return instructions;
     }
 
     json parsedData;
     file >> parsedData;
 
     instructions = parsedData["instructions"].get<std::vector<Token>>();
-    return instructions;
+    thetaDelta = parsedData["theta"].get<int>();
 }
 
 int main(int argc, char** argv){
     readInJSON();
-    init();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(windowWidth, windowHeight);
     glutCreateWindow("OpenGL");
+    init();
     glutDisplayFunc(update);
 
     glutMainLoop();
-
-    
 
     return 0;
 }

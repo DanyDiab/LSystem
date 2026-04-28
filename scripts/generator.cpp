@@ -11,7 +11,7 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 6;
+int MAXDEPTH = 10;
 
 std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;
@@ -105,12 +105,17 @@ std::tuple<std::vector<Token>, Rule**, int, int> tokenize(std::tuple<std::string
 
     std::vector<Token> axiomTokens;
     std::vector<std::string> axiomSplit = splitStringBySpace(axiomString);
-// tokenize the axiom
+
+    // tokenize the axiom
     for(const auto& axiomTokenString : axiomSplit){
+        if (tokenMap.find(axiomTokenString) == tokenMap.end()) {
+            std::cerr << "Error: Unrecognized axiom token: [" << axiomTokenString << "]\n";
+            exit(EXIT_FAILURE);
+        }
         Token axiomToken = tokenMap.at(axiomTokenString);
         axiomTokens.push_back(axiomToken);
     }
-    
+
     // create rules
     Rule **tokenRules = new Rule*[rules.size()];
     

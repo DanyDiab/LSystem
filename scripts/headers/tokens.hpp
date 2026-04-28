@@ -9,6 +9,7 @@ enum class Token {
     F,
     G,
     f,
+    g,
     Z,
     TurnLeft,
     TurnRight,
@@ -29,6 +30,7 @@ enum class Token {
 // F: Move forward by distance d and draw a line.
 // G: Move forward by distance d and draw a line (distinct variable for logic).
 // f: Move forward by distance d without drawing a line.
+// g: Move forward by distance d without drawing a line.
 // Z: Move forward along the Z-axis and draw a line.
 // TurnLeft (+): Turn left (counter-clockwise) by angle delta.
 // TurnRight (-): Turn right (clockwise) by angle delta.
@@ -49,6 +51,7 @@ static const std::unordered_map<std::string, Token> tokenMap = {
     {"F", Token::F},
     {"G", Token::G},
     {"f", Token::f},
+    {"g", Token::g},
     {"Z", Token::Z},
     {"+", Token::TurnLeft},
     {"-", Token::TurnRight},
