@@ -63,7 +63,6 @@ std::vector<Token> generateExpansion(std::tuple<std::vector<Token>, Rule**, int,
 // <axiom, rules>
 std::tuple<string, std::map<std::string, std::string>, int> parseJSON(){
     std::ifstream file("./system.json");
-    std::string line;
 
     std::string axiom;
     std::map<std::string, std::string> rules;

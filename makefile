@@ -1,8 +1,12 @@
 INCLUDES = -I./vendor
-SRC = ./scripts/generator.cpp
+SRCGEN = ./scripts/generator.cpp
+SRCREN = ./scripts/renderer.cpp
 
-generator : ./scripts/generator.cpp
-	g++ $(INCLUDES) $(SRC) -o generator -lglut -lGL -lGLU
+generator : $(SRCGEN)
+	g++ $(INCLUDES) $(SRCGEN) -o generator
 
-debug : ./scripts/generator.cpp
-	g++ $(INCLUDES) $(SRC) -g -o debug -lglut -lGL -lGLU
+renderer : $(SRCREN)
+	g++ $(INCLUDES) $(SRCREN) -o renderer -lglut -lGL -lGLU
+
+debug : .$(SRC)
+	g++ $(INCLUDES) $(SRCGEN) -g -o debug -lglut -lGL -lGLU
