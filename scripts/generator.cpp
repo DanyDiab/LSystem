@@ -36,9 +36,10 @@ std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRul
     return recurExpand(nextTokens,rules,numRules, depth+1);
 }
 
-int writeInstructionsToJSON(std::vector<Token> tokens){
+int writeInstructionsToJSON(std::vector<Token> tokens, int theta){
     json data;
     data["instructions"] = tokens;
+    data["theta"] = theta;
 
     std::ofstream outputFile("./instructions.json");
 
@@ -139,7 +140,8 @@ int main(int argc, char** argv){
     std::tuple<std::vector<Token>, Rule**, int, int> tokenizedData = tokenize(data);
     std::vector<Token> expanded = generateExpansion(tokenizedData);
 
-    writeInstructionsToJSON(expanded);
+    int theta = std::get<2>(tokenizedData);
+    writeInstructionsToJSON(expanded, theta);
     
     return 0;
 }
