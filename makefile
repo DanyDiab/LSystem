@@ -1,14 +1,14 @@
-INCLUDES = -I./vendor
 SRCGEN = ./scripts/generator.cpp
 SRCREN = ./scripts/renderer.cpp
 
 LINKS = -lGLEW -lglut -lGL -lGLU
 
 generator : $(SRCGEN)
-	g++ $(INCLUDES) $(SRCGEN) -o generator
+	g++ $(SRCGEN) -o generator $(LINKS)
 
 renderer : $(SRCREN)
-	g++ $(INCLUDES) $(SRCREN) -o renderer $(LINKS)
+	g++ $(SRCREN) -o renderer $(LINKS)
 
-debug : .$(SRC)
-	g++ $(INCLUDES) $(SRCGEN) -g -o debug $(LINKS)
+all  : $(SRCGEN) $(SRCREN)
+	g++ $(SRCGEN) -o generator $(LINKS)
+	g++ $(SRCREN) -o renderer $(LINKS)

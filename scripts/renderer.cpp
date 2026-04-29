@@ -7,7 +7,10 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
-#include <freeglut/freeglut.h>
+#include <GL/freeglut.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "./headers/tokens.hpp"
 
 using namespace std;
@@ -22,6 +25,7 @@ int thetaDelta = 0;
 
 int windowWidth = 1000;
 int windowHeight = 1000;
+float cameraZoom = 20.0f;
 
 float lineWidth = 1;
 
@@ -41,20 +45,28 @@ Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
 std::vector<float> points;
 
-void initCamera(int width, int height, float camX, float camY, float projectionScale) {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+void updateCamera() {
+    glUseProgram(shaderProgram);
+    glm::mat4 model = glm::mat4(1.0f);
 
-    glViewport(0, 0, width, height);
+    glm::vec3 cameraPos = glm::vec3(0.0f,0.0f,1.0f);
+    glm::vec3 targetPos = glm::vec3(0.0f,0.0f,0.0f);
+    glm::vec3 upVec = glm::vec3(0.0f,1.0f,0.0f);
 
-    float halfWidth = ((float)width * projectionScale) / 2.0f;
-    float halfHeight = ((float)height * projectionScale) / 2.0f;
-    glOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, 1.0f, -1.0f);
+    glm::mat4 view = glm::lookAt(cameraPos,targetPos, upVec);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    float halfWidth = static_cast<float>((windowWidth / 2.0f)) * cameraZoom;
+    float halfHeight = static_cast<float>((windowHeight / 2.0f)) * cameraZoom;
 
-    glTranslatef(-camX, -camY, 0.0f);
+    glm::mat4 projection = glm::ortho(-halfWidth,halfWidth,-halfHeight,halfHeight,.1f,100.0f);
+
+    GLint modelLoc = glGetUniformLocation(shaderProgram,"model");
+    GLint viewLoc = glGetUniformLocation(shaderProgram,"view");
+    GLint projectionLoc = glGetUniformLocation(shaderProgram,"projection");
+
+    glUniformMatrix4fv(modelLoc,1,GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc,1,GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projectionLoc,1,GL_FALSE, glm::value_ptr(projection));
 }
 
 
@@ -214,18 +226,7 @@ void compileShaders() {
     glDeleteShader(fragmentShader);
 }
 
-void init(){
-    turtle = {0, 0, 0};
-    nextTurtle = {0, 0, 0};
-    initCamera(windowWidth,windowHeight,0 ,200, 1.0f);
-    executeInstructions();
-
-    GLenum err = glewInit();
-
-
-    compileShaders();
-
-
+void generateAndBindVBOVAOs(){
     glGenBuffers(1, &pointsVBO);
     glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
 
@@ -237,29 +238,42 @@ void init(){
     glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
     glVertexAttribPointer(0,2,GL_FLOAT, GL_FALSE,0,NULL);
     glEnableVertexAttribArray(0);
+}
 
+void init(){
+    turtle = {0, 0, 0};
+    nextTurtle = {0, 0, 0};
+    executeInstructions();
+
+    GLenum err = glewInit();
+
+    compileShaders();
+    generateAndBindVBOVAOs();
 
 }
 
+void grabMouseWheel(int32_t wheel, int32_t direction, int32_t x, int32_t y){
+    if (direction == 0) {
+        return;
+    }
 
-void runShaders(){
-    glUseProgram(shaderProgram);
-
-    float orthoMatrix[16];
-    glGetFloatv(GL_PROJECTION_MATRIX, orthoMatrix);
-
-    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
-    
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, orthoMatrix);
+    if(direction > 0){
+        cameraZoom *= .9f;
+    }else{
+        cameraZoom *= 1.1f;
+    }
+    glutPostRedisplay();
 }
+
 
 void update(){
     if (vao == 0) {
         glutSwapBuffers();
         return;
     }
-    
-    runShaders();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    updateCamera();
+
     glBindVertexArray(vao);
     int32_t vertexCount = static_cast<int32_t>(points.size() / 2);
     glDrawArrays(GL_LINES, 0, vertexCount);
@@ -292,7 +306,7 @@ int main(int argc, char** argv){
     glutCreateWindow("OpenGL");
     init();
     glutDisplayFunc(update);
-
+    glutMouseWheelFunc(grabMouseWheel);
     glutMainLoop();
 
     return 0;
