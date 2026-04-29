@@ -10,7 +10,7 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 3;
+int MAXDEPTH = 10;
 
 std::string recurExpand(std::string curr, std::map<char, std::string> rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;
@@ -35,7 +35,7 @@ std::string recurExpand(std::string curr, std::map<char, std::string> rules, int
     return recurExpand(nextExpansion,rules,numRules, depth+1);
 }
 
-int writeInstructionsToJSON(std::string expanded, int theta){
+int writeInstructionsToJSON(std::string expanded, float theta){
 
 
     std::vector<Token> tokens;
@@ -59,24 +59,20 @@ int writeInstructionsToJSON(std::string expanded, int theta){
     return 0;
 }
 
-std::string generateExpansion(std::tuple<string, std::map<char, std::string>, int> data){
-    
-
+std::string generateExpansion(std::tuple<string, std::map<char, std::string>, float> data){
     std::string axiom = std::get<0>(data);
     std::map<char, std::string> rules = std::get<1>(data);
     int numRules = rules.size();
-
-
     return recurExpand(axiom,rules,numRules,0);
 }
 
 // <axiom, rules>
-std::tuple<string, std::map<char, std::string>, int> parseJSON(){
+std::tuple<string, std::map<char, std::string>, float> parseJSON(){
     std::ifstream file("./system.json");
 
     std::string axiom;
     std::map<char, std::string> rules;
-    int theta = 0;
+    float theta = 0.0f;
 
     if (!file.is_open()){
         cout << "file was not found or didnt open";
@@ -87,7 +83,7 @@ std::tuple<string, std::map<char, std::string>, int> parseJSON(){
     file >> parsedData;
 
     axiom = parsedData["axiom"].get<std::string>();
-    theta = parsedData["theta"].get<int>();
+    theta = parsedData["theta"].get<float>();
 
     json rulesJson = parsedData["rules"];
 
@@ -105,10 +101,10 @@ std::tuple<string, std::map<char, std::string>, int> parseJSON(){
 }
 
 int main(int argc, char** argv){
-    std::tuple<string, std::map<char, std::string>, int> data = parseJSON();
+    std::tuple<string, std::map<char, std::string>, float> data = parseJSON();
     std::string expanded = generateExpansion(data);
 
-    int theta = std::get<2>(data);
+    float theta = std::get<2>(data);
     writeInstructionsToJSON(expanded, theta);
     
     return 0;

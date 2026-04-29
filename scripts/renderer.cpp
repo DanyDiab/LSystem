@@ -12,13 +12,15 @@ using json = nlohmann::json;
 
 std::string filePath = "./instructions.json";
 
-const int length = 5;
+const int length = 1;
 const float DEGTORAD = 0.01745329f;
 int thetaDelta = 0;
 
 
 int windowWidth = 1000;
 int windowHeight = 1000;
+
+float lineWidth = 1;
 
 std::vector<Token> instructions;
 struct Turtle {
@@ -50,7 +52,7 @@ void initCamera(int width, int height, float camX, float camY, float projectionS
 void init(){
     turtle = {0, 0, 0};
     nextTurtle = {0, 0, 0};
-    initCamera(windowWidth,windowHeight,0 ,0, 3.0f);
+    initCamera(windowWidth,windowHeight,0 ,200, 2.0f);
 }
 
 void moveTurtleForward(Turtle *turtle){
@@ -73,7 +75,7 @@ void drawLineBetweenTurtles(Turtle turtle1, Turtle turtle2){
     float endX = turtle2.x;
     float endY = turtle2.y;
 
-    glLineWidth(1);
+    glLineWidth(lineWidth);
     glColor3f(1.0,1.0,1.0);
     glBegin(GL_LINES);
         glVertex2f(startX, startY);
@@ -142,15 +144,23 @@ void executeInstruction(Token token){
             break;
         }
         case Token::DecreaseWidth: {
+            if (lineWidth <= 1.0f) {
+                return;
+            }
+            lineWidth -= 1.0f;
             break;
         }
         case Token::IncreaseWidth: {
+            lineWidth += 1.0f;
             break;
         }
         case Token::NextColor: {
             break;
         }
         case Token::DrawPolygon: {
+            break;
+        }
+        case Token::NonTerminal:{
             break;
         }
         default: {
