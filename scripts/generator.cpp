@@ -10,7 +10,7 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 10;
+int MAXDEPTH = 5;
 
 std::string recurExpand(std::string curr, std::map<char, std::string> rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;

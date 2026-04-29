@@ -1,9 +1,12 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <stack>
 #include <nlohmann/json.hpp>
+#include <GL/glew.h>
 #include <GL/glut.h>
+#include <GL/gl.h>
 #include <freeglut/freeglut.h>
 #include "./headers/tokens.hpp"
 
@@ -12,7 +15,7 @@ using json = nlohmann::json;
 
 std::string filePath = "./instructions.json";
 
-const int length = 1;
+const int length = 4;
 const float DEGTORAD = 0.01745329f;
 int thetaDelta = 0;
 
@@ -21,6 +24,10 @@ int windowWidth = 1000;
 int windowHeight = 1000;
 
 float lineWidth = 1;
+
+GLuint vao = 0;
+GLuint pointsVBO = 0;
+GLuint shaderProgram;
 
 std::vector<Token> instructions;
 struct Turtle {
@@ -32,6 +39,7 @@ struct Turtle {
 Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
+std::vector<float> points;
 
 void initCamera(int width, int height, float camX, float camY, float projectionScale) {
     glMatrixMode(GL_PROJECTION);
@@ -49,11 +57,6 @@ void initCamera(int width, int height, float camX, float camY, float projectionS
     glTranslatef(-camX, -camY, 0.0f);
 }
 
-void init(){
-    turtle = {0, 0, 0};
-    nextTurtle = {0, 0, 0};
-    initCamera(windowWidth,windowHeight,0 ,200, 2.0f);
-}
 
 void moveTurtleForward(Turtle *turtle){
     int theta = turtle->theta;
@@ -68,34 +71,24 @@ void moveTurtleForward(Turtle *turtle){
 }
 
 
-void drawLineBetweenTurtles(Turtle turtle1, Turtle turtle2){
-    float startX = turtle1.x;
-    float startY = turtle1.y;
-
-    float endX = turtle2.x;
-    float endY = turtle2.y;
-
-    glLineWidth(lineWidth);
-    glColor3f(1.0,1.0,1.0);
-    glBegin(GL_LINES);
-        glVertex2f(startX, startY);
-        glVertex2f(endX, endY);
-    glEnd();
-
-    glFlush(); 
+void recordTurtlePosition(Turtle turtle){
+    points.push_back(turtle.x);
+    points.push_back(turtle.y);
 }
 
 
 void executeInstruction(Token token){
     switch (token) {
         case Token::F: {
+            recordTurtlePosition(nextTurtle);
             moveTurtleForward(&nextTurtle);
-            drawLineBetweenTurtles(turtle,nextTurtle);
+            recordTurtlePosition(nextTurtle);
             break;
         }
         case Token::G: {
+            recordTurtlePosition(nextTurtle);
             moveTurtleForward(&nextTurtle);
-            drawLineBetweenTurtles(turtle,nextTurtle);
+            recordTurtlePosition(nextTurtle);
             break;
         }
         case Token::f: {
@@ -182,11 +175,99 @@ void executeInstructions(){
     nextTurtle = turtle;
 }
 
+std::string readInShader(const std::string& filepath){
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open shader file: " << filepath << std::endl;
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+void compileShaders() {
+    std::string vertexCode = readInShader("./shaders/vert.glsl");
+    std::string fragmentCode = readInShader("./shaders/frag.glsl");
+
+    if (vertexCode.empty() || fragmentCode.empty()) {
+        return;
+    }
+
+    const char* vShaderCode = vertexCode.c_str();
+    const char* fShaderCode = fragmentCode.c_str();
+
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vShaderCode, NULL);
+    glCompileShader(vertexShader);
+
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fShaderCode, NULL);
+    glCompileShader(fragmentShader);
+
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+}
+
+void init(){
+    turtle = {0, 0, 0};
+    nextTurtle = {0, 0, 0};
+    initCamera(windowWidth,windowHeight,0 ,200, 1.0f);
+    executeInstructions();
+
+    GLenum err = glewInit();
+
+
+    compileShaders();
+
+
+    glGenBuffers(1, &pointsVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
+
+    GLsizeiptr totalSize = static_cast<GLsizeiptr>(points.size() * sizeof(float));
+    glBufferData(GL_ARRAY_BUFFER, totalSize, points.data(), GL_STATIC_DRAW);
+
+    glGenVertexArrays(1,&vao);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
+    glVertexAttribPointer(0,2,GL_FLOAT, GL_FALSE,0,NULL);
+    glEnableVertexAttribArray(0);
+
+
+}
+
+
+void runShaders(){
+    glUseProgram(shaderProgram);
+
+    float orthoMatrix[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, orthoMatrix);
+
+    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
+    
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, orthoMatrix);
+}
 
 void update(){
+    if (vao == 0) {
+        glutSwapBuffers();
+        return;
+    }
+    
+    runShaders();
+    glBindVertexArray(vao);
+    int32_t vertexCount = static_cast<int32_t>(points.size() / 2);
+    glDrawArrays(GL_LINES, 0, vertexCount);
+    glBindVertexArray(0);
     glutSwapBuffers();
-    executeInstructions();
     glutPostRedisplay();
+
+
 }
 
 void readInJSON(){
