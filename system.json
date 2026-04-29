@@ -1,7 +1,7 @@
 {
     "axiom": "F",
     "rules": {
-        "F": "F + F - F"
+        "F": "F + F"
     },
-    "theta": 120
+    "theta": 22.5
 }

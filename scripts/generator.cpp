@@ -4,39 +4,48 @@
 #include <utility>
 #include <nlohmann/json.hpp>
 #include "./headers/tokens.hpp"
-#include "./headers/rules.hpp"
 #include <vector>
 #include <sstream>
 
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 10;
+int MAXDEPTH = 3;
 
-std::vector<Token> recurExpand(std::vector<Token> curr, Rule** rules, int numRules, int depth){
+std::string recurExpand(std::string curr, std::map<char, std::string> rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;
-    std::vector<Token> nextTokens;
+    std::string nextExpansion;
     
-    for(const auto& token : curr){
+    for(const auto& character : curr){
+        if(std::isspace(character)) continue;
         bool foundExpansion = false;
         for(int i = 0 ; i < numRules; i++){
-            Rule* rule = rules[i];
-            if(rule->LHS == token){
-                std::vector<Token> RHS = rule->RHS;
-                for(const auto& rhsToken : RHS){
-                    nextTokens.push_back(rhsToken);
-                    foundExpansion = true;
-                }
+            std::map<char, std::string>::iterator it = rules.find(character);
+            if(!(it == rules.end())){
+                foundExpansion = true;
+                nextExpansion += it->second;
                 break;
             }
         }
-        if(!foundExpansion) nextTokens.push_back(token);
+        if(!foundExpansion){
+            nextExpansion += character;
+        }
     }
 
-    return recurExpand(nextTokens,rules,numRules, depth+1);
+    return recurExpand(nextExpansion,rules,numRules, depth+1);
 }
 
-int writeInstructionsToJSON(std::vector<Token> tokens, int theta){
+int writeInstructionsToJSON(std::string expanded, int theta){
+
+
+    std::vector<Token> tokens;
+
+    for(const auto& c : expanded){
+        if(std::isspace(c)) continue;
+        Token token = charToToken(c);
+        tokens.push_back(token);
+    }
+
     json data;
     data["instructions"] = tokens;
     data["theta"] = theta;
@@ -50,23 +59,23 @@ int writeInstructionsToJSON(std::vector<Token> tokens, int theta){
     return 0;
 }
 
-std::vector<Token> generateExpansion(std::tuple<std::vector<Token>, Rule**, int, int> data){
+std::string generateExpansion(std::tuple<string, std::map<char, std::string>, int> data){
     
 
-    std::vector<Token> axiom = std::get<0>(data);
-    Rule** rules = std::get<1>(data);
-    int numRules = std::get<3>(data);
+    std::string axiom = std::get<0>(data);
+    std::map<char, std::string> rules = std::get<1>(data);
+    int numRules = rules.size();
 
 
     return recurExpand(axiom,rules,numRules,0);
 }
 
 // <axiom, rules>
-std::tuple<string, std::map<std::string, std::string>, int> parseJSON(){
+std::tuple<string, std::map<char, std::string>, int> parseJSON(){
     std::ifstream file("./system.json");
 
     std::string axiom;
-    std::map<std::string, std::string> rules;
+    std::map<char, std::string> rules;
     int theta = 0;
 
     if (!file.is_open()){
@@ -78,74 +87,28 @@ std::tuple<string, std::map<std::string, std::string>, int> parseJSON(){
     file >> parsedData;
 
     axiom = parsedData["axiom"].get<std::string>();
-    rules = parsedData["rules"].get<std::map<std::string, std::string>>();
     theta = parsedData["theta"].get<int>();
+
+    json rulesJson = parsedData["rules"];
+
+    for(json::iterator it = rulesJson.begin(); it != rulesJson.end(); it++){
+        std::string keyString = it.key();
+
+        char keyChar = keyString[0];
+        std::string ruleValue = it.value().get<std::string>();
+        rules[keyChar] = ruleValue;
+    }
 
     file.close();
 
     return std::make_tuple(axiom, rules, theta);
 }
 
-std::vector<std::string> splitStringBySpace(std::string stringToSplit){
-    std::vector<std::string> split;
-    std::istringstream iss(stringToSplit);
-    std::string token;
-
-    while(iss >> token){
-        split.push_back(token);
-    }
-
-    return split;
-}
-
-std::tuple<std::vector<Token>, Rule**, int, int> tokenize(std::tuple<std::string, std::map<std::string, std::string>, int> inputData) {
-    std::string axiomString = std::get<0>(inputData);
-    std::map<std::string, std::string> rules = std::get<1>(inputData);
-    int theta = std::get<2>(inputData);
-
-    std::vector<Token> axiomTokens;
-    std::vector<std::string> axiomSplit = splitStringBySpace(axiomString);
-
-    // tokenize the axiom
-    for(const auto& axiomTokenString : axiomSplit){
-        if (tokenMap.find(axiomTokenString) == tokenMap.end()) {
-            std::cerr << "Error: Unrecognized axiom token: [" << axiomTokenString << "]\n";
-            exit(EXIT_FAILURE);
-        }
-        Token axiomToken = tokenMap.at(axiomTokenString);
-        axiomTokens.push_back(axiomToken);
-    }
-
-    // create rules
-    Rule **tokenRules = new Rule*[rules.size()];
-    
-    int ruleCount = 0;
-    for(const auto& [key,value] : rules){
-        Rule *rule = new Rule;
-        Token LHS = tokenMap.at(key);
-        rule->LHS = LHS;
-        // split RHS
-        std::vector<std::string> RHSSplit = splitStringBySpace(value);
-        std::vector<Token> RHS;
-        // add each token
-        for(const auto& strTok : RHSSplit){
-            Token token = tokenMap.at(strTok);
-            RHS.push_back(token);
-        }
-        rule->RHS = RHS;
-        tokenRules[ruleCount] = rule;
-        ruleCount++;
-    }
-    return std::make_tuple(axiomTokens,tokenRules,theta, rules.size());
-}
-
-
 int main(int argc, char** argv){
-    std::tuple<string, std::map<std::string, std::string>, int> data = parseJSON();
-    std::tuple<std::vector<Token>, Rule**, int, int> tokenizedData = tokenize(data);
-    std::vector<Token> expanded = generateExpansion(tokenizedData);
+    std::tuple<string, std::map<char, std::string>, int> data = parseJSON();
+    std::string expanded = generateExpansion(data);
 
-    int theta = std::get<2>(tokenizedData);
+    int theta = std::get<2>(data);
     writeInstructionsToJSON(expanded, theta);
     
     return 0;

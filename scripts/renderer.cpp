@@ -1,11 +1,11 @@
 #include <iostream>
-#include <freeglut/freeglut.h>
 #include <vector>
 #include <fstream>
+#include <stack>
 #include <nlohmann/json.hpp>
-#include "./headers/rules.hpp"
-#include "./headers/tokens.hpp"
 #include <GL/glut.h>
+#include <freeglut/freeglut.h>
+#include "./headers/tokens.hpp"
 
 using namespace std;
 using json = nlohmann::json;
@@ -29,6 +29,7 @@ struct Turtle {
 
 Turtle turtle;
 Turtle nextTurtle;
+std::stack<Turtle> turtleStack;
 
 void initCamera(int width, int height, float camX, float camY, float projectionScale) {
     glMatrixMode(GL_PROJECTION);
@@ -132,9 +133,12 @@ void executeInstruction(Token token){
             break;
         }
         case Token::PushState: {
+            turtleStack.push(nextTurtle);
             break;
         }
         case Token::PopState: {
+            nextTurtle = turtleStack.top();
+            turtleStack.pop();
             break;
         }
         case Token::DecreaseWidth: {

@@ -23,7 +23,8 @@ enum class Token {
     DecreaseWidth,
     IncreaseWidth,
     NextColor,
-    DrawPolygon
+    DrawPolygon,
+    NonTerminal
 };
 
 
@@ -45,28 +46,42 @@ enum class Token {
 // IncreaseWidth (#): Increase the current line thickness.
 // NextColor ('): Increment the drawing color index.
 // DrawPolygon (@): Draw a predefined polygon/sprite at the current position.
+// NonTerminal : Logic Variable not used for anything other than just control structure
 
 
-static const std::unordered_map<std::string, Token> tokenMap = {
-    {"F", Token::F},
-    {"G", Token::G},
-    {"f", Token::f},
-    {"g", Token::g},
-    {"Z", Token::Z},
-    {"+", Token::TurnLeft},
-    {"-", Token::TurnRight},
-    {"|", Token::TurnAround},
-    {"&", Token::PitchDown},
-    {"^", Token::PitchUp},
-    {"\\", Token::RollLeft},
-    {"/", Token::RollRight},
-    {"[", Token::PushState},
-    {"]", Token::PopState},
-    {"!", Token::DecreaseWidth},
-    {"#", Token::IncreaseWidth},
-    {"'", Token::NextColor},
-    {"@", Token::DrawPolygon}
-};
+
+inline Token charToToken(char charToConvert){
+    static const std::unordered_map<char, Token> tokenMap = {
+        {'F', Token::F},
+        {'G', Token::G},
+        {'f', Token::f},
+        {'g', Token::g},
+        {'Z', Token::Z},
+        {'+', Token::TurnLeft},
+        {'-', Token::TurnRight},
+        {'|', Token::TurnAround},
+        {'&', Token::PitchDown},
+        {'^', Token::PitchUp},
+        {'\\', Token::RollLeft},
+        {'/', Token::RollRight},
+        {'[', Token::PushState},
+        {']', Token::PopState},
+        {'!', Token::DecreaseWidth},
+        {'#', Token::IncreaseWidth},
+        {'\'', Token::NextColor},
+        {'@', Token::DrawPolygon}
+    };
+
+    std::unordered_map<char, Token>::const_iterator it = tokenMap.find(charToConvert);
+
+    if(it == tokenMap.end()){
+        return Token::NonTerminal;
+    }
+
+    return it->second;
+
+}
+
 
 #endif
 
