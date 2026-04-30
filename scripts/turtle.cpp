@@ -24,8 +24,8 @@ void moveTurtleForward(Turtle *turtle){
     turtle->pos += worldForward * length;
 }
 
-void rotateTurtle(Turtle *turtle, glm::vec3 axis){
-    float angleRadians = thetaDelta * DEGTORAD;
+void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
+    float angleRadians = angle * DEGTORAD;
     glm::quat rotation = glm::angleAxis(angleRadians, axis);
     turtle->quaternion = turtle->quaternion * rotation;
 }
@@ -63,27 +63,31 @@ void executeInstruction(Token token){
             break;
         }
         case Token::TurnLeft: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,1,0));
+            rotateTurtle(&nextTurtle, glm::vec3(0,1,0), thetaDelta);
             break;
         }
         case Token::TurnRight: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,-1,0));
+            rotateTurtle(&nextTurtle, glm::vec3(0,1,0), -thetaDelta);
             break;
         }
         case Token::TurnAround: {
-            // rotateTurtle(&nextTurtle, glm::vec3(0,0,0));
+            rotateTurtle(&nextTurtle, glm::vec3(0,1,0), 180);
             break;
         }
         case Token::PitchDown: {
+            rotateTurtle(&nextTurtle, glm::vec3(1,0,0), thetaDelta);
             break;
         }
         case Token::PitchUp: {
+            rotateTurtle(&nextTurtle, glm::vec3(1,0,0), -thetaDelta);
             break;
         }
         case Token::RollLeft: {
+            rotateTurtle(&nextTurtle, glm::vec3(0,0,1), thetaDelta);
             break;
         }
         case Token::RollRight: {
+            rotateTurtle(&nextTurtle, glm::vec3(0,0,1), thetaDelta);
             break;
         }
         case Token::PushState: {
