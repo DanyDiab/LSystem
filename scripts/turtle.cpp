@@ -26,7 +26,6 @@ void moveTurtleForward(Turtle *turtle){
 
 void rotateTurtle(Turtle *turtle, glm::vec3 axis){
     float angleRadians = thetaDelta * DEGTORAD;
-
     glm::quat rotation = glm::angleAxis(angleRadians, axis);
     turtle->quaternion = turtle->quaternion * rotation;
 }
@@ -68,11 +67,11 @@ void executeInstruction(Token token){
             break;
         }
         case Token::TurnRight: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,1,0));
+            rotateTurtle(&nextTurtle, glm::vec3(0,-1,0));
             break;
         }
         case Token::TurnAround: {
-            // rotateTurtle(&nextTurtle, glm::vec3(0,0,180));
+            // rotateTurtle(&nextTurtle, glm::vec3(0,0,0));
             break;
         }
         case Token::PitchDown: {
@@ -125,6 +124,8 @@ void executeInstruction(Token token){
 }
 
 void executeInstructions(){
+    points.clear();
+    points.reserve(instructions.size() * 6);
     turtle.pos = glm::vec3(0, 0, 0);
     turtle.quaternion = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     nextTurtle = turtle;

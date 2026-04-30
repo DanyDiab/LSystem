@@ -19,7 +19,7 @@ using json = nlohmann::json;
 
 int windowWidth = 1000;
 int windowHeight = 1000;
-float cameraZoom = 20.0f;
+float cameraZoom = 1.0f;
 
 GLuint vao = 0;
 GLuint pointsVBO = 0;
@@ -29,16 +29,16 @@ void updateCamera() {
     glUseProgram(shaderProgram);
     glm::mat4 model = glm::mat4(1.0f);
 
-    glm::vec3 cameraPos = glm::vec3(0.0f,0.0f,200.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f,200.0f,200.0f);
     glm::vec3 targetPos = glm::vec3(0.0f,0.0f,0.0f);
-    glm::vec3 upVec = glm::vec3(0.0f,1.0f,0.0f);
+    glm::vec3 upVec = glm::vec3(0.0f,0.0f,1.0f);
 
     glm::mat4 view = glm::lookAt(cameraPos,targetPos, upVec);
 
     float halfWidth = static_cast<float>((windowWidth / 2.0f)) * cameraZoom;
     float halfHeight = static_cast<float>((windowHeight / 2.0f)) * cameraZoom;
 
-    glm::mat4 projection = glm::ortho(-halfWidth,halfWidth,-halfHeight,halfHeight,.1f,100.0f);
+    glm::mat4 projection = glm::ortho(-halfWidth,halfWidth,-halfHeight,halfHeight,.1f,1000.0f);
 
     GLint modelLoc = glGetUniformLocation(shaderProgram,"model");
     GLint viewLoc = glGetUniformLocation(shaderProgram,"view");
@@ -135,7 +135,7 @@ void update(){
     updateCamera();
 
     glBindVertexArray(vao);
-    int32_t vertexCount = static_cast<int32_t>(points.size() / 2);
+    int32_t vertexCount = static_cast<int32_t>(points.size() / 3);
     glDrawArrays(GL_LINES, 0, vertexCount);
     glBindVertexArray(0);
     glutSwapBuffers();
