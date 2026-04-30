@@ -3,12 +3,13 @@
 #include <vector>
 #include <stack>
 #include <string>
+#include <glm/glm.hpp>
 #include "tokens.hpp"
+#include <glm/gtc/quaternion.hpp>
 
 struct Turtle {
-    float x;
-    float y;
-    float theta;
+    glm::vec3 pos;
+    glm::quat quaternion; 
 };
 
 extern std::vector<float> points;

@@ -8,7 +8,7 @@ using namespace std;
 using json = nlohmann::json;
 
 std::string filePath = "./instructions.json";
-const int length = 4;
+const float length = 4;
 const float DEGTORAD = 0.01745329f;
 int thetaDelta = 0;
 std::vector<Token> instructions;
@@ -19,34 +19,38 @@ std::vector<float> points;
 float lineWidth = 1;
 
 void moveTurtleForward(Turtle *turtle){
-    int theta = turtle->theta;
-    float offsetX = cos((90 - theta) * DEGTORAD) * length;
-    float offsetY = sin((90 - theta) * DEGTORAD) * length;
 
-    float endX = offsetX + turtle->x;
-    float endY = offsetY + turtle->y;
-
-    turtle->x = endX;
-    turtle->y = endY;
+    glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 worldForward = turtle->quaternion * localForward;
+    turtle->pos += worldForward * length;
 }
 
-void recordTurtlePosition(Turtle turtle){
-    points.push_back(turtle.x);
-    points.push_back(turtle.y);
+
+void rotateTurtle(Turtle *turtle, glm::vec3 rotation){
+    glm::quat quaterion = turtle->quaternion;
+
+    glm::quat rotateQuat = glm::quat(rotation);
+    turtle->quaternion = quaterion * rotateQuat;
+}
+
+
+void recordTurtlePosition(Turtle *turtle){
+    points.push_back(turtle->pos.x);
+    points.push_back(turtle->pos.y);
 }
 
 void executeInstruction(Token token){
     switch (token) {
         case Token::F: {
-            recordTurtlePosition(nextTurtle);
+            recordTurtlePosition(&nextTurtle);
             moveTurtleForward(&nextTurtle);
-            recordTurtlePosition(nextTurtle);
+            recordTurtlePosition(&nextTurtle);
             break;
         }
         case Token::G: {
-            recordTurtlePosition(nextTurtle);
+            recordTurtlePosition(&nextTurtle);
             moveTurtleForward(&nextTurtle);
-            recordTurtlePosition(nextTurtle);
+            recordTurtlePosition(&nextTurtle);
             break;
         }
         case Token::f: {
@@ -61,16 +65,15 @@ void executeInstruction(Token token){
             break;
         }
         case Token::TurnLeft: {
-            nextTurtle.theta -= thetaDelta;
+            rotateTurtle(&nextTurtle, glm::vec3(0,0,-thetaDelta));
             break;
         }
         case Token::TurnRight: {
-
-            nextTurtle.theta += thetaDelta;
+            rotateTurtle(&nextTurtle, glm::vec3(0,0,thetaDelta));
             break;
         }
         case Token::TurnAround: {
-            nextTurtle.theta += 180;
+            rotateTurtle(&nextTurtle, glm::vec3(0,0,180));
             break;
         }
         case Token::PitchDown: {
@@ -123,13 +126,17 @@ void executeInstruction(Token token){
 }
 
 void executeInstructions(){
+    turtle.pos = glm::vec3(0, 0, 0);
+    turtle.quaternion = glm::quat();
+    nextTurtle = turtle;
+
     for(const auto& instruction : instructions){
         executeInstruction(instruction);
         turtle = nextTurtle;
     }
 
-    turtle = {0, 0, 0};
-    nextTurtle = turtle;
+
+
 }
 
 void readInJSON(){

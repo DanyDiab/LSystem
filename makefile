@@ -1,7 +1,7 @@
 SRCGEN = ./scripts/generator.cpp
 SRCREN = ./scripts/renderer.cpp ./scripts/turtle.cpp
 
-LINKS = -lGLEW -lglut -lGL -lGLU
+LINKS = -g -lGLEW -lglut -lGL -lGLU
 
 generator : $(SRCGEN)
 	g++ $(SRCGEN) -o generator $(LINKS)
