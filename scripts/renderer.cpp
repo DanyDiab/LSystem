@@ -29,7 +29,7 @@ void updateCamera() {
     glUseProgram(shaderProgram);
     glm::mat4 model = glm::mat4(1.0f);
 
-    glm::vec3 cameraPos = glm::vec3(0.0f,0.0f,1.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f,0.0f,200.0f);
     glm::vec3 targetPos = glm::vec3(0.0f,0.0f,0.0f);
     glm::vec3 upVec = glm::vec3(0.0f,1.0f,0.0f);
 
@@ -98,7 +98,7 @@ void generateAndBindVBOVAOs(){
     glGenVertexArrays(1,&vao);
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
-    glVertexAttribPointer(0,2,GL_FLOAT, GL_FALSE,0,NULL);
+    glVertexAttribPointer(0,3,GL_FLOAT, GL_FALSE,0,NULL);
     glEnableVertexAttribArray(0);
 }
 

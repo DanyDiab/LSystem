@@ -19,24 +19,23 @@ std::vector<float> points;
 float lineWidth = 1;
 
 void moveTurtleForward(Turtle *turtle){
-
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 worldForward = turtle->quaternion * localForward;
     turtle->pos += worldForward * length;
 }
 
+void rotateTurtle(Turtle *turtle, glm::vec3 axis){
+    float angleRadians = thetaDelta * DEGTORAD;
 
-void rotateTurtle(Turtle *turtle, glm::vec3 rotation){
-    glm::quat quaterion = turtle->quaternion;
-
-    glm::quat rotateQuat = glm::quat(rotation);
-    turtle->quaternion = quaterion * rotateQuat;
+    glm::quat rotation = glm::angleAxis(angleRadians, axis);
+    turtle->quaternion = turtle->quaternion * rotation;
 }
 
 
 void recordTurtlePosition(Turtle *turtle){
     points.push_back(turtle->pos.x);
     points.push_back(turtle->pos.y);
+    points.push_back(turtle->pos.z);
 }
 
 void executeInstruction(Token token){
@@ -65,15 +64,15 @@ void executeInstruction(Token token){
             break;
         }
         case Token::TurnLeft: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,0,-thetaDelta));
+            rotateTurtle(&nextTurtle, glm::vec3(0,1,0));
             break;
         }
         case Token::TurnRight: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,0,thetaDelta));
+            rotateTurtle(&nextTurtle, glm::vec3(0,1,0));
             break;
         }
         case Token::TurnAround: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,0,180));
+            // rotateTurtle(&nextTurtle, glm::vec3(0,0,180));
             break;
         }
         case Token::PitchDown: {
@@ -127,16 +126,13 @@ void executeInstruction(Token token){
 
 void executeInstructions(){
     turtle.pos = glm::vec3(0, 0, 0);
-    turtle.quaternion = glm::quat();
+    turtle.quaternion = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     nextTurtle = turtle;
 
     for(const auto& instruction : instructions){
         executeInstruction(instruction);
         turtle = nextTurtle;
     }
-
-
-
 }
 
 void readInJSON(){
