@@ -1,8 +1,7 @@
 {
-    "axiom": "X",
+    "axiom": "F",
     "rules": {
-        "X": "F+[[X]-X]&F[^FX]\/X",
-        "F": "FF"
+        "F": "FF+[+F-^^^F-F]-[-F+&&F+F]"
     },
     "theta": 25
 }

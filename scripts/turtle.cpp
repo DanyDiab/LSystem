@@ -121,7 +121,6 @@ void executeInstruction(Token token){
         }
         default: {
             cout << "defaulting" << "\n";
-
             break;
         }
     }
@@ -131,7 +130,7 @@ void executeInstructions(){
     points.clear();
     points.reserve(instructions.size() * 6);
     turtle.pos = glm::vec3(0, 0, 0);
-    turtle.quaternion = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    turtle.quaternion = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     nextTurtle = turtle;
 
     for(const auto& instruction : instructions){
