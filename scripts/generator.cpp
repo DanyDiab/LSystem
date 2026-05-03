@@ -3,27 +3,44 @@
 #include <fstream>
 #include <utility>
 #include <nlohmann/json.hpp>
-#include "./headers/tokens.hpp"
 #include <vector>
 #include <sstream>
+#include <map>
+#include "./headers/tokens.hpp"
+#include "./headers/rule.hpp"
+#include <cstdlib>
 
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 4;
+int MAXDEPTH = 10;
 
-std::string recurExpand(std::string curr, std::map<char, std::string> rules, int numRules, int depth){
+std::string recurExpand(std::string curr, std::vector<Rule> rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;
     std::string nextExpansion;
     
     for(const auto& character : curr){
         if(std::isspace(character)) continue;
         bool foundExpansion = false;
-        for(int i = 0 ; i < numRules; i++){
-            std::map<char, std::string>::iterator it = rules.find(character);
-            if(!(it == rules.end())){
+        for(const auto& rule : rules){
+            if(rule.LHS == character){
                 foundExpansion = true;
-                nextExpansion += it->second;
+                float rand = static_cast<float>(std::rand() / RAND_MAX);
+
+                std::vector<float> probs = rule.probs;
+                std::vector<string> out = rule.RHS;
+                
+                int size = probs.size();
+                float runningProb = 0.0f;
+                for(int i = 0; i < size; i++){
+                    runningProb += probs.at(i);
+                    cout << "prob" << runningProb << "rand" << rand << "\n";
+                    if(rand < runningProb){
+
+                        nextExpansion += out.at(i);
+                        break;
+                    }
+                }
                 break;
             }
         }
@@ -59,19 +76,19 @@ int writeInstructionsToJSON(std::string expanded, float theta){
     return 0;
 }
 
-std::string generateExpansion(std::tuple<string, std::map<char, std::string>, float> data){
+std::string generateExpansion(std::tuple<string, std::vector<Rule>, float> data){
     std::string axiom = std::get<0>(data);
-    std::map<char, std::string> rules = std::get<1>(data);
+    std::vector<Rule> rules = std::get<1>(data);
     int numRules = rules.size();
     return recurExpand(axiom,rules,numRules,0);
 }
 
 // <axiom, rules>
-std::tuple<string, std::map<char, std::string>, float> parseJSON(){
+std::tuple<string, std::vector<Rule>, float> parseJSON(){
     std::ifstream file("./system.json");
 
     std::string axiom;
-    std::map<char, std::string> rules;
+    std::vector<Rule> rules;
     float theta = 0.0f;
 
     if (!file.is_open()){
@@ -88,11 +105,27 @@ std::tuple<string, std::map<char, std::string>, float> parseJSON(){
     json rulesJson = parsedData["rules"];
 
     for(json::iterator it = rulesJson.begin(); it != rulesJson.end(); it++){
+        Rule rule;
         std::string keyString = it.key();
-
         char keyChar = keyString[0];
-        std::string ruleValue = it.value().get<std::string>();
-        rules[keyChar] = ruleValue;
+
+        rule.LHS = keyChar;
+
+        json outcomes = it.value();
+
+        std::vector<float> probs;
+        std::vector<std::string> outs;
+        for(const auto& outcome : outcomes){
+
+            float prob = outcome["prob"].get<float>();
+            std::string out = outcome["out"].get<std::string>();
+
+            probs.push_back(prob);
+            outs.push_back(out);
+        }
+
+        rule.probs = probs;
+        rule.RHS = outs;
     }
 
     file.close();
@@ -101,7 +134,7 @@ std::tuple<string, std::map<char, std::string>, float> parseJSON(){
 }
 
 int main(int argc, char** argv){
-    std::tuple<string, std::map<char, std::string>, float> data = parseJSON();
+    std::tuple<string, std::vector<Rule>, float> data = parseJSON();
     std::string expanded = generateExpansion(data);
 
     float theta = std::get<2>(data);
