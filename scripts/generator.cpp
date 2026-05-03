@@ -13,7 +13,7 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 10;
+int MAXDEPTH = 5;
 
 std::string recurExpand(std::string curr, std::vector<Rule> rules, int numRules, int depth){
     if(depth == MAXDEPTH) return curr;
@@ -21,28 +21,29 @@ std::string recurExpand(std::string curr, std::vector<Rule> rules, int numRules,
     
     for(const auto& character : curr){
         if(std::isspace(character)) continue;
+
         bool foundExpansion = false;
         for(const auto& rule : rules){
-            if(rule.LHS == character){
-                foundExpansion = true;
-                float rand = static_cast<float>(std::rand() / RAND_MAX);
+            if(rule.LHS != character) continue;
 
-                std::vector<float> probs = rule.probs;
-                std::vector<string> out = rule.RHS;
+            foundExpansion = true;
+            float rand = static_cast<float>(std::rand() / static_cast<float>(RAND_MAX));
+
+            std::vector<float> probs = rule.probs;
+            std::vector<string> out = rule.RHS;
+            
+            int size = probs.size();
+            float runningProb = 0.0f;
+            for(int i = 0; i < size; i++){
+                runningProb += probs.at(i);
+
+                if(rand >= runningProb) continue;
                 
-                int size = probs.size();
-                float runningProb = 0.0f;
-                for(int i = 0; i < size; i++){
-                    runningProb += probs.at(i);
-                    cout << "prob" << runningProb << "rand" << rand << "\n";
-                    if(rand < runningProb){
-
-                        nextExpansion += out.at(i);
-                        break;
-                    }
-                }
+                nextExpansion += out.at(i);
                 break;
+                
             }
+            break;
         }
         if(!foundExpansion){
             nextExpansion += character;
@@ -126,6 +127,7 @@ std::tuple<string, std::vector<Rule>, float> parseJSON(){
 
         rule.probs = probs;
         rule.RHS = outs;
+        rules.push_back(rule);
     }
 
     file.close();
@@ -134,6 +136,8 @@ std::tuple<string, std::vector<Rule>, float> parseJSON(){
 }
 
 int main(int argc, char** argv){
+    unsigned int currentTime = static_cast<unsigned int>(time(nullptr));
+    srand(currentTime);
     std::tuple<string, std::vector<Rule>, float> data = parseJSON();
     std::string expanded = generateExpansion(data);
 

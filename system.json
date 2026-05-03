@@ -2,10 +2,10 @@
     "axiom": "F",
     "rules": {
         "F": [
-            { "prob": 0.33, "out": "F F - [ [ ^ F ] + F ] + [ [ & F ] - F ]" },
-            { "prob": 0.33, "out": "F [ + F ] [ - F ] / / / / [ ^ F ]" },
-            { "prob": 0.34, "out": "F F" }
+            { "prob": 0.33, "out": "F[+F]F[-F]F" },
+            { "prob": 0.33, "out": "F[+F]F" },
+            { "prob": 0.34, "out": "F[-F]F" }
         ]
     },
-    "theta": 20
+    "theta": 25
 }
