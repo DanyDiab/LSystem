@@ -23,6 +23,7 @@ float cameraZoom = 45.0f;
 
 GLuint vao = 0;
 GLuint pointsVBO = 0;
+GLuint widthVBO = 0;
 GLuint shaderProgram;
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 100.0f, 300.0f);
@@ -110,14 +111,24 @@ void generateAndBindVBOVAOs() {
     glGenBuffers(1, &pointsVBO);
     glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
 
-    GLsizeiptr totalSize = static_cast<GLsizeiptr>(points.size() * sizeof(float));
-    glBufferData(GL_ARRAY_BUFFER, totalSize, points.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &widthVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, widthVBO);
+
+    GLsizeiptr pointsSize = static_cast<GLsizeiptr>(points.size() * sizeof(float));
+    glBufferData(GL_ARRAY_BUFFER, pointsSize, points.data(), GL_STATIC_DRAW);
+
+    GLsizeiptr widthSize = static_cast<GLsizeiptr>(widths.size() * sizeof(float));
+    glBufferData(GL_ARRAY_BUFFER, widthSize, widths.data(), GL_STATIC_DRAW);
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, widthVBO);
+
+    glVertexAttribPointer(1,1,GL_FLOAT,GL_FALSE,0,NULL);
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 }
 
 void init() {

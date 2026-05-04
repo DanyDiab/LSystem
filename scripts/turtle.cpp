@@ -16,6 +16,7 @@ Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
 std::vector<float> points;
+std::vector<float> widths;
 float lineWidth = 10;
 
 void moveTurtleForward(Turtle *turtle){
@@ -35,6 +36,7 @@ void recordTurtlePosition(Turtle *turtle){
     points.push_back(turtle->pos.x);
     points.push_back(turtle->pos.y);
     points.push_back(turtle->pos.z);
+    widths.push_back(5.0f);
 }
 
 void executeInstruction(Token token){
