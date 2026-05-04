@@ -71,8 +71,9 @@ std::string readInShader(const std::string& filepath) {
 }
 
 void compileShaders() {
-    std::string vertexCode = readInShader("./shaders/vert.glsl");
-    std::string fragmentCode = readInShader("./shaders/frag.glsl");
+    std::string vertexCode = readInShader("./shaders/vert.vert");
+    std::string fragmentCode = readInShader("./shaders/frag.frag");
+    std::string geometryCode = readInShader("./shaders/geometry.geom");
 
     if (vertexCode.empty() || fragmentCode.empty()) {
         return;
@@ -80,6 +81,7 @@ void compileShaders() {
 
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
+    const char* gShaderCode = geometryCode.c_str();
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vShaderCode, NULL);
@@ -89,13 +91,19 @@ void compileShaders() {
     glShaderSource(fragmentShader, 1, &fShaderCode, NULL);
     glCompileShader(fragmentShader);
 
+    GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geometryShader,1, &gShaderCode,NULL);
+    glCompileShader(geometryShader);
+
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
+    glAttachShader(shaderProgram,geometryShader);
     glLinkProgram(shaderProgram);
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    glDeleteShader(geometryShader);
 }
 
 void generateAndBindVBOVAOs() {
@@ -246,7 +254,7 @@ void update() {
 
     glBindVertexArray(vao);
     int32_t vertexCount = static_cast<int32_t>(points.size() / 3);
-    glDrawArrays(GL_LINES, 0, vertexCount);
+    glDrawArrays(GL_LINE_STRIP, 0, vertexCount);
     glBindVertexArray(0);
 
     glutSwapBuffers();
@@ -270,7 +278,6 @@ int main(int argc, char** argv) {
     glutKeyboardUpFunc(keyboardUp);
     glutPassiveMotionFunc(mouseMove);
     glutMouseWheelFunc(grabMouseWheel);
-    
     glutIdleFunc(update);
 
     glutMainLoop();

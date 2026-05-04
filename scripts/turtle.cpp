@@ -16,7 +16,7 @@ Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
 std::vector<float> points;
-float lineWidth = 1;
+float lineWidth = 10;
 
 void moveTurtleForward(Turtle *turtle){
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
