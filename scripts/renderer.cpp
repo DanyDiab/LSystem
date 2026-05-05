@@ -2,6 +2,8 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <numbers>
+#include <cmath>
 #include <stack>
 #include <nlohmann/json.hpp>
 #include <GL/glew.h>
@@ -41,6 +43,48 @@ int lastFrame = 0;
 
 bool keys[256] = {false};
 
+
+std::vector<float> cylinderPoints;
+
+
+std::vector<float>generateCylinderVertices(int numPoints){
+    auto generateCirclePoints = [](int numPoints){
+
+        std::vector<float> circlePoints;
+
+        float stepSize = (2 * M_PI) / numPoints;
+
+        for(int i = 0; i < numPoints; i++){
+            float x = cos(i * stepSize);
+            float y = sin(i * stepSize);
+
+            circlePoints.push_back(x);
+            circlePoints.push_back(y);
+        }
+
+        return circlePoints;
+    };
+
+    std::vector<float> circle1 = generateCirclePoints(numPoints / 2);
+    std::vector<float> circle2 = generateCirclePoints(numPoints / 2);
+
+    std::vector<float> cylinderPoints;
+    int p1 = 0;
+    int p2 = 0;
+    for(int i = 0; i < numPoints / 4; i++){
+        cylinderPoints.push_back(circle1.at(p1));
+        cylinderPoints.push_back(circle1.at(p1 + 1));
+
+        cylinderPoints.push_back(circle1.at(p2));
+        cylinderPoints.push_back(circle1.at(p2 + 1));
+
+        p1 += 2;
+        p2 += 2;
+    }
+
+
+    return {1.0};
+}
 void updateCamera() {
     glUseProgram(shaderProgram);
     glm::mat4 model = glm::mat4(1.0f);
@@ -113,6 +157,7 @@ void generateAndBindVBOVAOs() {
 }
 
 void init() {
+    cylinderPoints = generateCylinderVertices(20);
     executeInstructions();
 
     GLenum err = glewInit();
