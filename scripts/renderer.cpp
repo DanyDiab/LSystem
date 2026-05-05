@@ -58,10 +58,12 @@ std::vector<float>generateCylinderVertices(int numPoints, float height){
 
         for(int i = 0; i < numPoints; i++){
             float x = cos(i * stepSize);
-            float y = sin(i * stepSize) + height;
+            float y = height;
+            float z = sin(i * stepSize);
 
             circlePoints.push_back(x);
             circlePoints.push_back(y);
+            circlePoints.push_back(z);
         }
 
         return circlePoints;
@@ -76,12 +78,16 @@ std::vector<float>generateCylinderVertices(int numPoints, float height){
     for(int i = 0; i < numPoints / 2; i++){
         cylinderPoints.push_back(circle1.at(p1));
         cylinderPoints.push_back(circle1.at(p1 + 1));
+        cylinderPoints.push_back(circle1.at(p1 + 2));
+
 
         cylinderPoints.push_back(circle2.at(p2));
         cylinderPoints.push_back(circle2.at(p2 + 1));
+        cylinderPoints.push_back(circle2.at(p2 + 2));
 
-        p1 += 2;
-        p2 += 2;
+
+        p1 += 3;
+        p2 += 3;
     }
 
 
@@ -159,7 +165,7 @@ void generateAndBindVBOVAOs() {
 }
 
 void init() {
-    cylinderPoints = generateCylinderVertices(20, 10);
+    cylinderPoints = generateCylinderVertices(20, 3);
     executeInstructions();
 
     GLenum err = glewInit();
@@ -300,12 +306,12 @@ void update() {
     glBindVertexArray(0);
     float scale = 50;
     glPointSize(5.0f);
-    glColor3f(1.0f,1.0f,1.0f);
-    glBegin(GL_POINTS);
-    for(int i = 0; i < cylinderPoints.size(); i+=2){
+    glBegin(GL_TRIANGLE_STRIP);
+    for(int i = 0; i < cylinderPoints.size(); i+=3){
         float x = cylinderPoints.at(i) * scale;
         float y = cylinderPoints.at(i + 1) * scale;
-        glVertex2f(x,y);
+        float z = cylinderPoints.at(i + 2) * scale;
+        glVertex3f(x,y,z);
     }
     glEnd();
     glutSwapBuffers();
