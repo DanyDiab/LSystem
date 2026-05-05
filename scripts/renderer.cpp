@@ -19,6 +19,8 @@
 using namespace std;
 using json = nlohmann::json;
 
+
+const float DEGTORAD = 0.01745329f;
 int windowWidth = 1000;
 int windowHeight = 1000;
 float cameraZoom = 45.0f; 
@@ -47,16 +49,16 @@ bool keys[256] = {false};
 std::vector<float> cylinderPoints;
 
 
-std::vector<float>generateCylinderVertices(int numPoints){
-    auto generateCirclePoints = [](int numPoints){
+std::vector<float>generateCylinderVertices(int numPoints, float height){
+    auto generateCirclePoints = [](int numPoints, float height){
 
         std::vector<float> circlePoints;
 
-        float stepSize = (2 * M_PI) / numPoints;
+        float stepSize = ((2 * M_PI) / numPoints);
 
         for(int i = 0; i < numPoints; i++){
             float x = cos(i * stepSize);
-            float y = sin(i * stepSize);
+            float y = sin(i * stepSize) + height;
 
             circlePoints.push_back(x);
             circlePoints.push_back(y);
@@ -65,25 +67,25 @@ std::vector<float>generateCylinderVertices(int numPoints){
         return circlePoints;
     };
 
-    std::vector<float> circle1 = generateCirclePoints(numPoints / 2);
-    std::vector<float> circle2 = generateCirclePoints(numPoints / 2);
+    std::vector<float> circle1 = generateCirclePoints(numPoints / 2, 0);
+    std::vector<float> circle2 = generateCirclePoints(numPoints / 2, height);
 
     std::vector<float> cylinderPoints;
     int p1 = 0;
     int p2 = 0;
-    for(int i = 0; i < numPoints / 4; i++){
+    for(int i = 0; i < numPoints / 2; i++){
         cylinderPoints.push_back(circle1.at(p1));
         cylinderPoints.push_back(circle1.at(p1 + 1));
 
-        cylinderPoints.push_back(circle1.at(p2));
-        cylinderPoints.push_back(circle1.at(p2 + 1));
+        cylinderPoints.push_back(circle2.at(p2));
+        cylinderPoints.push_back(circle2.at(p2 + 1));
 
         p1 += 2;
         p2 += 2;
     }
 
 
-    return {1.0};
+    return cylinderPoints;
 }
 void updateCamera() {
     glUseProgram(shaderProgram);
@@ -157,7 +159,7 @@ void generateAndBindVBOVAOs() {
 }
 
 void init() {
-    cylinderPoints = generateCylinderVertices(20);
+    cylinderPoints = generateCylinderVertices(20, 10);
     executeInstructions();
 
     GLenum err = glewInit();
@@ -275,6 +277,9 @@ void processInput() {
 }
 
 void update() {
+
+
+
     int currentFrame = glutGet(GLUT_ELAPSED_TIME);
     deltaTime = (currentFrame - lastFrame) / 1000.0f;
     lastFrame = currentFrame;
@@ -293,7 +298,16 @@ void update() {
     int32_t vertexCount = static_cast<int32_t>(points.size() / 3);
     glDrawArrays(GL_LINES, 0, vertexCount);
     glBindVertexArray(0);
-
+    float scale = 50;
+    glPointSize(5.0f);
+    glColor3f(1.0f,1.0f,1.0f);
+    glBegin(GL_POINTS);
+    for(int i = 0; i < cylinderPoints.size(); i+=2){
+        float x = cylinderPoints.at(i) * scale;
+        float y = cylinderPoints.at(i + 1) * scale;
+        glVertex2f(x,y);
+    }
+    glEnd();
     glutSwapBuffers();
     glutPostRedisplay();
 }
@@ -305,6 +319,7 @@ int main(int argc, char** argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(windowWidth, windowHeight);
     glutCreateWindow("L-System 3D");
+    glCullFace(GL_NONE);
 
     glEnable(GL_DEPTH_TEST);
 
