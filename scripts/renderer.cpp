@@ -66,6 +66,11 @@ std::vector<float>generateCylinderVertices(int numPoints, float height){
             circlePoints.push_back(z);
         }
 
+        circlePoints.push_back(circlePoints.at(0));
+        circlePoints.push_back(circlePoints.at(1));
+        circlePoints.push_back(circlePoints.at(2));
+
+
         return circlePoints;
     };
 
@@ -75,7 +80,7 @@ std::vector<float>generateCylinderVertices(int numPoints, float height){
     std::vector<float> cylinderPoints;
     int p1 = 0;
     int p2 = 0;
-    for(int i = 0; i < numPoints / 2; i++){
+    for(int i = 0; i < circle1.size() / 3; i++){
         cylinderPoints.push_back(circle1.at(p1));
         cylinderPoints.push_back(circle1.at(p1 + 1));
         cylinderPoints.push_back(circle1.at(p1 + 2));
