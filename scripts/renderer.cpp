@@ -27,6 +27,7 @@ float cameraZoom = 45.0f;
 
 GLuint vao = 0;
 GLuint pointsVBO = 0;
+GLuint offsetsVBO = 0;
 GLuint shaderProgram;
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 100.0f, 300.0f);
@@ -74,8 +75,8 @@ std::vector<float>generateCylinderVertices(int numPoints, float height){
         return circlePoints;
     };
 
-    std::vector<float> circle1 = generateCirclePoints(numPoints / 2, 0);
-    std::vector<float> circle2 = generateCirclePoints(numPoints / 2, height);
+    std::vector<float> circle1 = generateCirclePoints((numPoints / 2) - 1, 0);
+    std::vector<float> circle2 = generateCirclePoints((numPoints / 2) - 1, height);
 
     std::vector<float> cylinderPoints;
     int p1 = 0;
@@ -114,6 +115,9 @@ void updateCamera() {
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+
+
 }
 
 std::string readInShader(const std::string& filepath) {
@@ -128,8 +132,8 @@ std::string readInShader(const std::string& filepath) {
 }
 
 void compileShaders() {
-    std::string vertexCode = readInShader("./shaders/vert.glsl");
-    std::string fragmentCode = readInShader("./shaders/frag.glsl");
+    std::string vertexCode = readInShader("./shaders/vert.vert");
+    std::string fragmentCode = readInShader("./shaders/frag.frag");
 
     if (vertexCode.empty() || fragmentCode.empty()) {
         return;
@@ -159,14 +163,45 @@ void generateAndBindVBOVAOs() {
     glGenBuffers(1, &pointsVBO);
     glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
 
-    GLsizeiptr totalSize = static_cast<GLsizeiptr>(points.size() * sizeof(float));
-    glBufferData(GL_ARRAY_BUFFER, totalSize, points.data(), GL_STATIC_DRAW);
+    GLsizeiptr totalSize = static_cast<GLsizeiptr>(cylinderPoints.size() * sizeof(float));
+    glBufferData(GL_ARRAY_BUFFER, totalSize, cylinderPoints.data(), GL_STATIC_DRAW);
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(0);
+
+    int index = 0;
+    glm::vec3 translations[10000];
+    for(unsigned int i = 0; i < points.size(); i += 3){
+        float x = points.at(i);
+        float y = points.at(i + 1);
+        float z = points.at(i + 2);
+
+        glm::vec3 offset;
+        offset.x = x;
+        offset.y = y;
+        offset.z = z;
+
+        translations[index++] = offset;
+    }
+
+    GLuint offsetLoc = glGetUniformLocation(shaderProgram, "offsets");
+
+
+    glGenBuffers(1,&offsetsVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, offsetsVBO);
+    GLsizeiptr totalOffsetSize = static_cast<GLsizeiptr>(10000 * sizeof(glm::vec3));
+    glBufferData(GL_ARRAY_BUFFER, totalOffsetSize, translations, GL_STATIC_DRAW);
+    
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, offsetsVBO);
+    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribDivisor(1,1);
+
+
 }
 
 void init() {
@@ -307,18 +342,7 @@ void update() {
 
     glBindVertexArray(vao);
     int32_t vertexCount = static_cast<int32_t>(points.size() / 3);
-    glDrawArrays(GL_LINES, 0, vertexCount);
-    glBindVertexArray(0);
-    float scale = 50;
-    glPointSize(5.0f);
-    glBegin(GL_TRIANGLE_STRIP);
-    for(int i = 0; i < cylinderPoints.size(); i+=3){
-        float x = cylinderPoints.at(i) * scale;
-        float y = cylinderPoints.at(i + 1) * scale;
-        float z = cylinderPoints.at(i + 2) * scale;
-        glVertex3f(x,y,z);
-    }
-    glEnd();
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, cylinderPoints.size(), vertexCount);
     glutSwapBuffers();
     glutPostRedisplay();
 }
