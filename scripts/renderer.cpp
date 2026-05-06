@@ -50,17 +50,17 @@ bool keys[256] = {false};
 std::vector<float> cylinderPoints;
 
 
-std::vector<float>generateCylinderVertices(int numPoints, float height){
-    auto generateCirclePoints = [](int numPoints, float height){
+std::vector<float>generateCylinderVertices(int numPoints, float height, float width){
+    auto generateCirclePoints = [](int numPoints, float height, float width){
 
         std::vector<float> circlePoints;
 
         float stepSize = ((2 * M_PI) / numPoints);
 
         for(int i = 0; i < numPoints; i++){
-            float x = cos(i * stepSize);
+            float x = cos(i * stepSize) * width;
             float y = height;
-            float z = sin(i * stepSize);
+            float z = sin(i * stepSize) * width;
 
             circlePoints.push_back(x);
             circlePoints.push_back(y);
@@ -75,8 +75,8 @@ std::vector<float>generateCylinderVertices(int numPoints, float height){
         return circlePoints;
     };
 
-    std::vector<float> circle1 = generateCirclePoints((numPoints / 2) - 1, 0);
-    std::vector<float> circle2 = generateCirclePoints((numPoints / 2) - 1, height);
+    std::vector<float> circle1 = generateCirclePoints((numPoints / 2) - 1, 0, width);
+    std::vector<float> circle2 = generateCirclePoints((numPoints / 2) - 1, height, width);
 
     std::vector<float> cylinderPoints;
     int p1 = 0;
@@ -115,9 +115,6 @@ void updateCamera() {
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-
-
 }
 
 std::string readInShader(const std::string& filepath) {
@@ -205,7 +202,7 @@ void generateAndBindVBOVAOs() {
 }
 
 void init() {
-    cylinderPoints = generateCylinderVertices(20, 3);
+    cylinderPoints = generateCylinderVertices(20, 3, 5.0f);
     executeInstructions();
 
     GLenum err = glewInit();
