@@ -126,7 +126,7 @@ void executeInstruction(Token token){
     }
 }
 
-void executeInstructions(){
+std::vector<float> executeInstructions(){
     points.clear();
     points.reserve(instructions.size() * 6);
     turtle.pos = glm::vec3(0, 0, 0);
@@ -137,8 +137,12 @@ void executeInstructions(){
         executeInstruction(instruction);
         turtle = nextTurtle;
     }
+    
+    return points;
 }
 
+
+// remove std::vector<float> from edtern
 void readInJSON(){
     std::ifstream file(filePath);
 

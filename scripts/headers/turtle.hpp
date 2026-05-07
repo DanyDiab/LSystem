@@ -12,10 +12,8 @@ struct Turtle {
     glm::quat quaternion; 
 };
 
-extern std::vector<float> points;
-
 void moveTurtleForward(Turtle *turtle);
 void recordTurtlePosition(Turtle turtle);
 void executeInstruction(Token token);
-void executeInstructions();
+std::vector<float> executeInstructions();
 void readInJSON();
