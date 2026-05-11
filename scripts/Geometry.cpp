@@ -5,14 +5,15 @@
 namespace LSystem {
 
     namespace {
-        std::vector<float> generateCirclePoints(int numPoints, float height, float width) {
+        std::vector<float> generateCirclePoints(int numPoints, float zOffset, float radius) {
             std::vector<float> circlePoints;
             float stepSize = ((2.0f * M_PI) / numPoints);
 
-            for(int i = 0; i < numPoints; i++){
-                float x = cos(i * stepSize) * width;
-                float y = height;
-                float z = sin(i * stepSize) * width;
+            for(int i = 0; i < numPoints; i++) {
+                float x = cos(i * stepSize) * radius;
+                float y = sin(i * stepSize) * radius; 
+                
+                float z = zOffset;
 
                 circlePoints.push_back(x);
                 circlePoints.push_back(y);
@@ -29,18 +30,20 @@ namespace LSystem {
         }
     }
 
-    std::vector<float> Geometry::generateCylinder(int numSegments, float height, float radius) {
+    std::vector<float> Geometry::generateCylinder(int numSegments, float length, float radius) {
         if (numSegments < 3) {
             return {};
         }
 
-        std::vector<float> circle1 = generateCirclePoints((numSegments / 2) - 1, 0, radius);
-        std::vector<float> circle2 = generateCirclePoints((numSegments / 2) - 1, height, radius);
+        std::vector<float> circle1 = generateCirclePoints(numSegments, 0.0f, radius);
+        
+        std::vector<float> circle2 = generateCirclePoints(numSegments, length, radius);
 
         std::vector<float> cylinderPoints;
         int p1 = 0;
         int p2 = 0;
-        for(size_t i = 0; i < circle1.size() / 3; i++){
+        
+        for(size_t i = 0; i < circle1.size() / 3; i++) {
             cylinderPoints.push_back(circle1.at(p1));
             cylinderPoints.push_back(circle1.at(p1 + 1));
             cylinderPoints.push_back(circle1.at(p1 + 2));

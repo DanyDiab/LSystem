@@ -31,8 +31,8 @@ namespace LSystem {
         vertexCount = static_cast<int>(meshData.size() / 3);
     }
 
-    void Renderer::updateInstances(const std::vector<glm::vec3>& positions) {
-        if (positions.empty()) {
+    void Renderer::updateInstances(const std::vector<glm::mat4>& models) {
+        if (models.empty()) {
             return;
         }
 
@@ -47,16 +47,20 @@ namespace LSystem {
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, instancesVbo);
-        glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3), positions.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STATIC_DRAW);
+        
+        std::size_t vec4Size = sizeof(glm::vec4);;
 
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-        glVertexAttribDivisor(1, 1);
+        for (int i = 0; i < 4; i++) {
+            glEnableVertexAttribArray(1 + i);
+            glVertexAttribPointer(i + 1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+            glVertexAttribDivisor(1 + i, 1);         
+        }
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
+        instanceCount = static_cast<int>(models.size());
 
-        instanceCount = static_cast<int>(positions.size());
     }
 
     void Renderer::draw(Shader& shader, Camera& camera, int width, int height) {

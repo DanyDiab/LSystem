@@ -15,5 +15,5 @@ struct Turtle {
 void moveTurtleForward(Turtle *turtle);
 void recordTurtlePosition(Turtle turtle);
 void executeInstruction(Token token);
-std::vector<float> executeInstructions();
+std::vector<glm::mat4> executeInstructions();
 void readInJSON();

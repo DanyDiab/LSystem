@@ -31,16 +31,11 @@ void init() {
     shader->load("./shaders/vert.vert", "./shaders/frag.frag");
 
     readInJSON();
-    std::vector<float> points = executeInstructions();
+    std::vector<glm::mat4> models = executeInstructions();
 
-    std::vector<glm::vec3> instances;
-    for (size_t i = 0; i < points.size(); i += 3) {
-        instances.push_back(glm::vec3(points[i], points[i+1], points[i+2]));
-    }
-
-    std::vector<float> mesh = LSystem::Geometry::generateCylinder(20, 3.0f, 5.0f);
+    std::vector<float> mesh = LSystem::Geometry::generateCylinder(20, 4.0f, 1.0f);
     renderer->setupMesh(mesh);
-    renderer->updateInstances(instances);
+    renderer->updateInstances(models);
 
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_NONE);

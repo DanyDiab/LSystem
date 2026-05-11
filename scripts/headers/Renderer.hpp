@@ -17,7 +17,7 @@ namespace LSystem {
 
         Renderer();
         void setupMesh(const std::vector<float>& meshData);
-        void updateInstances(const std::vector<glm::vec3>& positions);
+        void updateInstances(const std::vector<glm::mat4>& models);
         void draw(Shader& shader, Camera& camera, int width, int height);
     };
 }
