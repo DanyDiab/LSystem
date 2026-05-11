@@ -15,9 +15,8 @@ std::vector<Token> instructions;
 Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
-std::vector<float> points;
-std::vector<float> widths;
-float lineWidth = 10;
+std::vector<glm::mat4> models;
+float lineWidth = 1;
 
 void moveTurtleForward(Turtle *turtle){
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -33,10 +32,13 @@ void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
 
 
 void recordTurtlePosition(Turtle *turtle){
-    points.push_back(turtle->pos.x);
-    points.push_back(turtle->pos.y);
-    points.push_back(turtle->pos.z);
-    widths.push_back(5.0f);
+    glm::mat4 identity = glm::mat4(1.0f);
+
+    glm::mat4 model = glm::translate(identity,turtle->pos);
+
+    model *= glm::mat4_cast(turtle->quaternion);
+
+    models.push_back(model);
 }
 
 void executeInstruction(Token token){
@@ -128,9 +130,9 @@ void executeInstruction(Token token){
     }
 }
 
-void executeInstructions(){
-    points.clear();
-    points.reserve(instructions.size() * 6);
+std::vector<glm::mat4> executeInstructions(){
+    models.clear();
+    models.reserve(instructions.size());
     turtle.pos = glm::vec3(0, 0, 0);
     turtle.quaternion = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     nextTurtle = turtle;
@@ -139,8 +141,12 @@ void executeInstructions(){
         executeInstruction(instruction);
         turtle = nextTurtle;
     }
+    
+    return models;
 }
 
+
+// remove std::vector<float> from edtern
 void readInJSON(){
     std::ifstream file(filePath);
 

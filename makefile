@@ -1,14 +1,14 @@
 SRCGEN = ./scripts/generator.cpp
-SRCREN = ./scripts/renderer.cpp ./scripts/turtle.cpp
+SRCREN = ./scripts/main.cpp ./scripts/Camera.cpp ./scripts/Shader.cpp ./scripts/Renderer.cpp ./scripts/Geometry.cpp ./scripts/turtle.cpp
 
 LINKS = -fsanitize=address -g -lGLEW -lglut -lGL -lGLU
 
 generator : $(SRCGEN)
 	g++ $(SRCGEN) -o generator $(LINKS)
 
-renderer : $(SRCREN)
-	g++ $(SRCREN) -o renderer $(LINKS)
+lsystem : $(SRCREN)
+	g++ $(SRCREN) -o lsystem $(LINKS)
 
 all  : $(SRCGEN) $(SRCREN)
 	g++ $(SRCGEN) -o generator $(LINKS)
-	g++ $(SRCREN) -o renderer $(LINKS)
+	g++ $(SRCREN) -o lsystem $(LINKS)
