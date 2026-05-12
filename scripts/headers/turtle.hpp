@@ -13,6 +13,7 @@
 struct Turtle {
     glm::vec3 pos;
     glm::quat quaternion; 
+    float scale;
 };
 
 void moveTurtleForward(Turtle *turtle);

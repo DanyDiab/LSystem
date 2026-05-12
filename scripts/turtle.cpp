@@ -32,9 +32,12 @@ void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
 
 
 void recordTurtlePosition(Turtle *turtle){
+    float scale = turtle->scale;
     glm::mat4 identity = glm::mat4(1.0f);
 
     glm::mat4 model = glm::translate(identity,turtle->pos);
+
+    model = glm::scale(model, glm::vec3(scale,1.0,scale));
 
     model *= glm::mat4_cast(turtle->quaternion);
 
@@ -104,14 +107,14 @@ void executeInstruction(Token token){
             break;
         }
         case Token::DecreaseWidth: {
-            if (lineWidth <= 1.0f) {
+            if (nextTurtle.scale <= 1.0f) {
                 return;
             }
-            lineWidth -= 1.0f;
+            nextTurtle.scale -= 1.0f;
             break;
         }
         case Token::IncreaseWidth: {
-            lineWidth += 1.0f;
+            nextTurtle.scale += 1.0f;
             break;
         }
         case Token::NextColor: {
@@ -133,6 +136,7 @@ void executeInstruction(Token token){
 std::vector<glm::mat4> executeInstructions(){
     models.clear();
     models.reserve(instructions.size());
+    turtle.scale = 1.0f;
     turtle.pos = glm::vec3(0, 0, 0);
     turtle.quaternion = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     nextTurtle = turtle;
