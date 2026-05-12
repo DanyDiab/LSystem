@@ -12,12 +12,14 @@ namespace LSystem {
         GLuint vao;
         GLuint vbo;
         GLuint instancesVbo;
+        GLuint widthsVbo;
+        
         int vertexCount;
         int instanceCount;
 
         Renderer();
         void setupMesh(const std::vector<float>& meshData);
-        void updateInstances(const std::vector<glm::mat4>& models);
+        void updateInstances(const std::vector<glm::mat4>& models, const std::vector<float>& widths);
         void draw(Shader& shader, Camera& camera, int width, int height);
     };
 }

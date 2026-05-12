@@ -16,6 +16,7 @@ Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
 std::vector<glm::mat4> models;
+std::vector<float> widths; 
 float lineWidth = 1;
 
 void moveTurtleForward(Turtle *turtle){
@@ -37,11 +38,12 @@ void recordTurtlePosition(Turtle *turtle){
 
     glm::mat4 model = glm::translate(identity,turtle->pos);
 
-    model = glm::scale(model, glm::vec3(scale,1.0,scale));
+    model = glm::scale(model, glm::vec3(1.0f,length,1.0f));
 
     model *= glm::mat4_cast(turtle->quaternion);
 
     models.push_back(model);
+    widths.push_back(scale);
 }
 
 void executeInstruction(Token token){
@@ -133,7 +135,7 @@ void executeInstruction(Token token){
     }
 }
 
-std::vector<glm::mat4> executeInstructions(){
+std::tuple<std::vector<glm::mat4>, std::vector<float>> executeInstructions(){
     models.clear();
     models.reserve(instructions.size());
     turtle.scale = 1.0f;
@@ -146,11 +148,10 @@ std::vector<glm::mat4> executeInstructions(){
         turtle = nextTurtle;
     }
     
-    return models;
+    return std::make_tuple(models,widths);
 }
 
 
-// remove std::vector<float> from edtern
 void readInJSON(){
     std::ifstream file(filePath);
 

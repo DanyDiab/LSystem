@@ -9,7 +9,6 @@
 
 
 
-// store current width in turtle?
 struct Turtle {
     glm::vec3 pos;
     glm::quat quaternion; 
@@ -19,5 +18,5 @@ struct Turtle {
 void moveTurtleForward(Turtle *turtle);
 void recordTurtlePosition(Turtle turtle);
 void executeInstruction(Token token);
-std::vector<glm::mat4> executeInstructions();
+std::tuple<std::vector<glm::mat4>, std::vector<float>> executeInstructions();
 void readInJSON();

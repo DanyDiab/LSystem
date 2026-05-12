@@ -31,11 +31,15 @@ void init() {
     shader->load("./shaders/vert.vert", "./shaders/frag.frag");
 
     readInJSON();
-    std::vector<glm::mat4> models = executeInstructions();
+    std::tuple<std::vector<glm::mat4>, std::vector<float>> instaceInfo = executeInstructions();
+
+    std::vector<glm::mat4> models = std::get<0>(instaceInfo);
+    std::vector<float> widths = std::get<1>(instaceInfo);
+
 
     std::vector<float> mesh = LSystem::Geometry::generateCylinder(20, 4.0f, 1.0f);
     renderer->setupMesh(mesh);
-    renderer->updateInstances(models);
+    renderer->updateInstances(models, widths);
 
     glEnable(GL_DEPTH_TEST);
     glCullFace(GL_NONE);

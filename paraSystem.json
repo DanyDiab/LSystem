@@ -1,0 +1,23 @@
+{
+    "constants": {
+        "r1": 0.8,
+        "wr": 0.707,
+        "theta": 25
+    },
+    "axiom": "A(1, 10)",
+    "rules": {
+        "A(l, w)": [
+            { 
+                "prob": 0.5, 
+                "out": "!(w)F(l)[&(theta)A(l*r1, w*wr)]/(120)[&(theta)A(l*r1, w*wr)]" 
+            },
+            { 
+                "prob": 0.5, 
+                "out": "!(w)F(l)[+(theta)A(l*r1, w*wr)][-(theta)A(l*r1, w*wr)]" 
+            }
+        ]
+    }
+}
+
+
+
