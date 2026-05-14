@@ -14,6 +14,7 @@ namespace LSystem {
         float zoom;
         float lastX;
         float lastY;
+        bool firstMouse;
         
         Camera();
 

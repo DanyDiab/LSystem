@@ -88,22 +88,14 @@ void keyboardDown(unsigned char key, int x, int y) {
 void keyboardUp(unsigned char key, int x, int y) {
     keys[key] = false;
 }
-
 void mouseMove(int x, int y) {
     if (!camera || !appRunning) return;
 
-    static bool firstMouse = true;
-    static bool isWarping = false;
-    
-    if (isWarping) {
-        isWarping = false;
-        return;
-    }
-
-    if (firstMouse) {
+    if (camera->firstMouse) {
         camera->lastX = static_cast<float>(x);
         camera->lastY = static_cast<float>(y);
-        firstMouse = false;
+        camera->firstMouse = false;
+        return;
     }
 
     float xOffset = static_cast<float>(x) - camera->lastX;
@@ -112,15 +104,8 @@ void mouseMove(int x, int y) {
     camera->lastX = static_cast<float>(x);
     camera->lastY = static_cast<float>(y);
 
-    camera->processMouse(xOffset, yOffset);
-
-    int centerX = windowWidth / 2;
-    int centerY = windowHeight / 2;
-    if (x != centerX || y != centerY) {
-        isWarping = true;
-        glutWarpPointer(centerX, centerY);
-        camera->lastX = static_cast<float>(centerX);
-        camera->lastY = static_cast<float>(centerY);
+    if (xOffset != 0.0f || yOffset != 0.0f) {
+        camera->processMouse(xOffset, yOffset);
     }
 }
 
