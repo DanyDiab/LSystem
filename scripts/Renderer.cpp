@@ -3,7 +3,7 @@
 
 namespace LSystem {
 
-    Renderer::Renderer() : vao(0), vbo(0), instancesVbo(0), vertexCount(0), instanceCount(0) {}
+    Renderer::Renderer() : vao(0), vbo(0), instancesVbo(0), widthsVbo(0), vertexCount(0), instanceCount(0) {}
 
     void Renderer::setupMesh(const std::vector<float>& meshData) {
         if (meshData.empty()) {
@@ -39,6 +39,9 @@ namespace LSystem {
         if (instancesVbo == 0) {
             glGenBuffers(1, &instancesVbo);
         }
+        if (widthsVbo == 0) {
+            glGenBuffers(1, &widthsVbo);
+        }
 
         glBindVertexArray(vao);
 
@@ -53,13 +56,16 @@ namespace LSystem {
             glVertexAttribDivisor(1 + i, 1);         
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER,widthsVbo);
-        glBufferData(GL_ARRAY_BUFFER, widths.size() * sizeof(float),widths.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, widthsVbo);
+        glBufferData(GL_ARRAY_BUFFER, widths.size() * sizeof(float), widths.data(), GL_STATIC_DRAW);
+        
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+        glVertexAttribDivisor(5, 1);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         instanceCount = static_cast<int>(models.size());
-
     }
 
     void Renderer::draw(Shader& shader, Camera& camera, int width, int height) {

@@ -37,7 +37,7 @@ void init() {
     std::vector<float> widths = std::get<1>(instaceInfo);
 
 
-    std::vector<float> mesh = LSystem::Geometry::generateCylinder(20, 4.0f, 1.0f);
+    std::vector<float> mesh = LSystem::Geometry::generateCylinder(20, 1.0f, 1.0f);
     renderer->setupMesh(mesh);
     renderer->updateInstances(models, widths);
 

@@ -86,7 +86,7 @@ std::string generateExpansion(std::tuple<string, std::vector<Rule>, float> data)
 
 // <axiom, rules>
 std::tuple<string, std::vector<Rule>, float> parseJSON(){
-    std::ifstream file("./system.json");
+    std::ifstream file("./systems/system.json");
 
     std::string axiom;
     std::vector<Rule> rules;

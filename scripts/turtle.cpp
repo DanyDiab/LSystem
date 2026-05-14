@@ -38,9 +38,9 @@ void recordTurtlePosition(Turtle *turtle){
 
     glm::mat4 model = glm::translate(identity,turtle->pos);
 
-    model = glm::scale(model, glm::vec3(1.0f,length,1.0f));
-
     model *= glm::mat4_cast(turtle->quaternion);
+
+    model = glm::scale(model, glm::vec3(scale, scale, length));
 
     models.push_back(model);
     widths.push_back(scale);
@@ -51,13 +51,11 @@ void executeInstruction(Token token){
         case Token::F: {
             recordTurtlePosition(&nextTurtle);
             moveTurtleForward(&nextTurtle);
-            recordTurtlePosition(&nextTurtle);
             break;
         }
         case Token::G: {
             recordTurtlePosition(&nextTurtle);
             moveTurtleForward(&nextTurtle);
-            recordTurtlePosition(&nextTurtle);
             break;
         }
         case Token::f: {
@@ -96,7 +94,7 @@ void executeInstruction(Token token){
             break;
         }
         case Token::RollRight: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,0,1), thetaDelta);
+            rotateTurtle(&nextTurtle, glm::vec3(0,0,1), -thetaDelta);
             break;
         }
         case Token::PushState: {
