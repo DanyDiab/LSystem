@@ -11,7 +11,8 @@ namespace LSystem {
           pitch(-15.0f),
           zoom(45.0f),
           lastX(500.0f),
-          lastY(500.0f) {
+          lastY(500.0f),
+          firstMouse(true) {
         updateCameraVectors();
     }
 
@@ -46,7 +47,7 @@ namespace LSystem {
     }
 
     void Camera::processMouse(float xOffset, float yOffset) {
-        float sensitivity = 0.15f;
+        float sensitivity = 0.1f;
         xOffset *= sensitivity;
         yOffset *= sensitivity;
 
