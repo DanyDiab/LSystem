@@ -18,6 +18,7 @@ using namespace std;
 using json = nlohmann::json;
 
 int MAXDEPTH = 5;
+const std::vector<char> operators = {'*', '+', '-', '/', '^'};
 
 // std::string recurExpand(std::string curr, std::vector<Rule> rules, int numRules, int depth){
 //     if(depth == MAXDEPTH) return curr;
@@ -57,14 +58,14 @@ int MAXDEPTH = 5;
 //     return recurExpand(nextExpansion,rules,numRules, depth+1);
 // }
 
-// std::string generateExpansion(std::tuple<string, std::vector<Rule>, float> data){
-//     std::string axiom = std::get<0>(data);
+// std::string generateExpansion(std::tuple<ParaInstruction*, std::vector<Rule>> data){
+//     ParaInstruction* axiom = std::get<0>(data);
 //     std::vector<Rule> rules = std::get<1>(data);
 //     int numRules = rules.size();
 //     return recurExpand(axiom,rules,numRules,0);
 // }
 
-ParaInstruction* encodeInstruction(std::string instructionToEncode){
+ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unordered_map<std::string, float> constants){
     ParaInstruction* paraIns = new ParaInstruction();
     
     std::vector<char> delim = {'('};
@@ -83,12 +84,23 @@ ParaInstruction* encodeInstruction(std::string instructionToEncode){
     for(const auto& param : paramSplit){
         if(Util::isNumeric(param)){
             float paramF = std::stof(param);
-            cout << "this is a float: " << paramF << "\n";
             paramsVariant.push_back(paramF);
         }
         else{
-            cout << "this is a string: " << param << "\n";
-            paramsVariant.push_back(param);
+            // split by operator
+            std::vector<std::string> paramOpSplit = Util::splitString(param, operators, true);
+            std::string fullParam = "";
+            for(const auto& operand : paramOpSplit){
+                std::unordered_map<std::string, float>::const_iterator it = constants.find(operand);
+                if(it == constants.end()){
+                    fullParam += operand;
+                }
+                else{
+                    float replacement = it->second;
+                    fullParam += std::to_string(replacement);
+                }
+            }
+            paramsVariant.push_back(fullParam);
         }
     }
 
@@ -103,7 +115,7 @@ std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
     std::ifstream file("./systems/paraSystem.json");
 
     std::vector<Rule> rules;
-    std::map<std::string, float> constants;
+    std::unordered_map<std::string, float> constants;
     std::vector<ParaInstruction*> RHSVec;
     ParaInstruction* axiomIns = new ParaInstruction();
     if (!file.is_open()){
@@ -115,16 +127,17 @@ std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
     file >> parsedData;
 
     std::string axiomStr = parsedData["axiom"].get<std::string>();
+    constants = parsedData["constants"].get<std::unordered_map<std::string, float>>();
 
-    axiomIns = encodeInstruction(axiomStr);
-    constants = parsedData["constants"].get<std::map<std::string, float>>();
+
+    axiomIns = encodeInstruction(axiomStr, constants);
     
     json rulesJson = parsedData["rules"];
     for(json::iterator it = rulesJson.begin(); it != rulesJson.end(); it++){
         Rule rule;
         std::string keyString = it.key();
 
-        ParaInstruction* key = encodeInstruction(keyString);
+        ParaInstruction* key = encodeInstruction(keyString, constants);
 
         rule.LHS = key;
 
@@ -143,7 +156,7 @@ std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
             std::vector<std::string> outTokens = Util::tokenize(out);
 
             for(const auto& tok : outTokens){
-                ParaInstruction* paraIns = encodeInstruction(tok);
+                ParaInstruction* paraIns = encodeInstruction(tok, constants);
                 RHSVec.push_back(paraIns);
             }
             
@@ -184,7 +197,7 @@ int main(int argc, char** argv){
     unsigned int currentTime = static_cast<unsigned int>(time(nullptr));
     srand(currentTime);
     std::tuple<ParaInstruction*, std::vector<Rule>> data = parseJSON();
-    // std::string expanded = generateExpansion(data);
+    // std::string expanded = generateExpansion(data, );
 
     // float theta = std::get<2>(data);
     // writeInstructionsToJSON(expanded, theta);

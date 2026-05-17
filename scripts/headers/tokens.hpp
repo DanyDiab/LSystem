@@ -23,6 +23,7 @@ enum class Token {
     NonTerminal
 };
 
+
 // F: Move forward by distance d and draw a line.
 // G: Move forward by distance d and draw a line (distinct variable for logic).
 // f: Move forward by distance d without drawing a line.
