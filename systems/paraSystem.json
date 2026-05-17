@@ -11,7 +11,7 @@
                 "prob": 0.5, 
                 "out": "!(w)F(l)[&(theta)A(l*r1, w*wr)]/(120)[&(theta)A(l*r1, w*wr)]" 
             },
-            { 
+            {
                 "prob": 0.5, 
                 "out": "!(w)F(l)[+(theta)A(l*r1, w*wr)][-(theta)A(l*r1, w*wr)]" 
             }
