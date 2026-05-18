@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <unordered_map>
 #include <utility>
 #include <nlohmann/json.hpp>
+#include <variant>
 #include <vector>
 #include <sstream>
 #include <map>
@@ -20,50 +22,87 @@ using json = nlohmann::json;
 int MAXDEPTH = 5;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
 
-// std::string recurExpand(std::string curr, std::vector<Rule> rules, int numRules, int depth){
-//     if(depth == MAXDEPTH) return curr;
-//     std::string nextExpansion;
+std::unordered_map<std::string, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
     
-//     for(const auto& character : curr){
-//         if(std::isspace(character)) continue;
+    std::unordered_map<std::string, float> paramMapping;
+    std::vector<std::string> stringKeys;
+    std::vector<float> mappings;
 
-//         bool foundExpansion = false;
-//         for(const auto& rule : rules){
-//             if(rule.LHS != character) continue;
+    for(const auto& rule : rules){
+        std::vector<std::variant<float, std::string>> params = rule.LHS->params;
 
-//             foundExpansion = true;
-//             float rand = static_cast<float>(std::rand() / static_cast<float>(RAND_MAX));
+        for(const auto& param : params){
+            const std::string* strPtr = std::get_if<std::string>(&param);
+            stringKeys.push_back(*strPtr);
+        }
+    }
 
-//             std::vector<float> probs = rule.probs;
-//             std::vector<string> out = rule.RHS;
+    for(const auto& ins : curr){
+        std::vector<std::variant<float, std::string>> params = ins->params;
+
+        for(const auto& param : params){
+            const std::string* strPtr = std::get_if<std::string>(&param);
+            mappings.push_back(std::stof(*strPtr));
+        }
+    }
+
+    for(int i = 0; i < mappings.size(); i++){
+        float mapping = mappings.at(i);
+        std::string key = stringKeys.at(i);
+
+        paramMapping[key] = mapping;
+    }
+
+    return paramMapping;
+}
+
+
+std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, std::vector<Rule> rules, std::unordered_map<std::string, float> paramMapping, int depth){
+    if(depth == MAXDEPTH) return curr;
+    std::vector<ParaInstruction*> nextExpansion;
+    for(const auto& currIns : curr){
+
+        bool foundExpansion = false;
+        for(const auto& rule : rules){
+            if(rule.LHS->token != currIns->token) continue;
+
+            foundExpansion = true;
+            float rand = static_cast<float>(std::rand() / static_cast<float>(RAND_MAX));
+
+            std::vector<float> probs = rule.probs;
+            std::vector<ParaInstruction*> out = rule.RHS;
             
-//             int size = probs.size();
-//             float runningProb = 0.0f;
-//             for(int i = 0; i < size; i++){
-//                 runningProb += probs.at(i);
+            int size = probs.size();
+            float runningProb = 0.0f;
+            for(int i = 0; i < size; i++){
+                runningProb += probs.at(i);
 
-//                 if(rand >= runningProb) continue;
+                if(rand >= runningProb) continue;
                 
-//                 nextExpansion += out.at(i);
-//                 break;
+                nextExpansion.emplace_back(out.at(i));
+                break;
                 
-//             }
-//             break;
-//         }
-//         if(!foundExpansion){
-//             nextExpansion += character;
-//         }
-//     }
+            }
+            break;
+        }
+        if(!foundExpansion){
+            nextExpansion.push_back(currIns);
+        }
+    }
 
-//     return recurExpand(nextExpansion,rules,numRules, depth+1);
-// }
+    return recurExpand(nextExpansion,rules, paramMapping, depth+1);
+}
 
-// std::string generateExpansion(std::tuple<ParaInstruction*, std::vector<Rule>> data){
-//     ParaInstruction* axiom = std::get<0>(data);
-//     std::vector<Rule> rules = std::get<1>(data);
-//     int numRules = rules.size();
-//     return recurExpand(axiom,rules,numRules,0);
-// }
+std::vector<ParaInstruction*> generateExpansion(std::tuple<ParaInstruction*, std::vector<Rule>> data){
+    ParaInstruction* axiom = std::get<0>(data);
+    std::vector<ParaInstruction*> curr = {axiom}; 
+
+    std::vector<Rule> rules = std::get<1>(data);
+
+
+    std::unordered_map<std::string, float> paramMapping = generateParamMapping(curr, rules);
+    return recurExpand(curr,rules,paramMapping, 0);
+}
 
 ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unordered_map<std::string, float> constants){
     ParaInstruction* paraIns = new ParaInstruction();
@@ -197,9 +236,8 @@ int main(int argc, char** argv){
     unsigned int currentTime = static_cast<unsigned int>(time(nullptr));
     srand(currentTime);
     std::tuple<ParaInstruction*, std::vector<Rule>> data = parseJSON();
-    // std::string expanded = generateExpansion(data, );
+    std::vector<ParaInstruction*> expanded = generateExpansion(data);
 
-    // float theta = std::get<2>(data);
     // writeInstructionsToJSON(expanded, theta);
     
     return 0;
