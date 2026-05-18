@@ -18,5 +18,5 @@ struct ParaInstruction{
 struct Rule{
     ParaInstruction* LHS;
     std::vector<float> probs;
-    std::vector<ParaInstruction*> RHS;    
+    std::vector<std::vector<ParaInstruction*>> RHS;    
 };
