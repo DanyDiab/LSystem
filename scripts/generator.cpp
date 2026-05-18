@@ -41,8 +41,8 @@ std::unordered_map<std::string, float> generateParamMapping(std::vector<ParaInst
         std::vector<std::variant<float, std::string>> params = ins->params;
 
         for(const auto& param : params){
-            const std::string* strPtr = std::get_if<std::string>(&param);
-            mappings.push_back(std::stof(*strPtr));
+            const float *val = std::get_if<float>(&param);
+            mappings.push_back(*val);
         }
     }
 
