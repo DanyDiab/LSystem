@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -22,43 +23,40 @@ using json = nlohmann::json;
 int MAXDEPTH = 5;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
 
-std::unordered_map<std::string, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
+std::unordered_map<char, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
     
-    std::unordered_map<std::string, float> paramMapping;
-    std::vector<std::string> stringKeys;
-    std::vector<float> mappings;
+    std::unordered_map<char, float> paramMapping;
 
     for(const auto& rule : rules){
         std::vector<std::variant<float, std::string>> params = rule.LHS->params;
 
         for(const auto& param : params){
             const std::string* strPtr = std::get_if<std::string>(&param);
-            stringKeys.push_back(*strPtr);
+            paramMapping[(*strPtr)[0]] = 0;
         }
     }
 
     for(const auto& ins : curr){
-        std::vector<std::variant<float, std::string>> params = ins->params;
+        std::unordered_map<char, float>::const_iterator it = paramMapping.find(ins->token);
 
+        if(it == paramMapping.end()) continue;
+
+        std::vector<std::variant<float, std::string>> params = ins->params;
         for(const auto& param : params){
             const float *val = std::get_if<float>(&param);
-            mappings.push_back(*val);
+            paramMapping[ins->token] = *val;
         }
     }
 
-    for(int i = 0; i < mappings.size(); i++){
-        float mapping = mappings.at(i);
-        std::string key = stringKeys.at(i);
-
-        paramMapping[key] = mapping;
-    }
 
     return paramMapping;
 }
 
 
-std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, std::vector<Rule> rules, std::unordered_map<std::string, float> paramMapping, int depth){
+std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, std::vector<Rule> rules, int depth){
     if(depth == MAXDEPTH) return curr;
+    std::unordered_map<char, float> paramMapping = generateParamMapping(curr, rules);
+
     std::vector<ParaInstruction*> nextExpansion;
     for(const auto& currIns : curr){
 
@@ -70,7 +68,7 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
             float rand = static_cast<float>(std::rand() / static_cast<float>(RAND_MAX));
 
             std::vector<float> probs = rule.probs;
-            std::vector<ParaInstruction*> out = rule.RHS;
+            std::vector<std::vector<ParaInstruction*>> out = rule.RHS;
             
             int size = probs.size();
             float runningProb = 0.0f;
@@ -79,18 +77,66 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
 
                 if(rand >= runningProb) continue;
                 
-                nextExpansion.emplace_back(out.at(i));
+                std::vector<ParaInstruction*> selectedOut = out.at(i);
+                std::vector<ParaInstruction*> cleanedOut;
+                // convert parameters from string to float
+                for(const auto& sOut : selectedOut){
+                    for(const auto& param : sOut->params){
+                        if(std::holds_alternative<float>(param)) continue;
+                        
+                        const std::string* strPtr = std::get_if<std::string>(&param);
+                        std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
+                        // no operator was present
+                        if(operatorSplit.size() == 1){
+                            float val = paramMapping[operatorSplit[0][0]];
+                            sOut->params.pop_back();
+                            sOut->params.push_back(val);
+
+                            cleanedOut.push_back(sOut);
+                        }
+                        // operator was presesnt, must have 3 components
+                        else{
+                            float val1 = paramMapping[operatorSplit[0][0]];
+                            float val2 = paramMapping[operatorSplit[2][0]];
+                            sOut->params.pop_back();
+                            
+                            char op = operatorSplit[1][0];
+                            float res;
+                            switch(op){
+                                case('*'):{
+                                    res = val1 * val2;
+                                    break;
+                                }
+                                case('+'):{
+                                    res = val1 + val2;
+                                    break;
+                                }
+                                case('/'):{
+                                    res = val1 / val2;
+                                    break;
+                                }
+                                case('^'):{
+                                    res = std::pow(val1, val2);
+                                }
+                            }
+                            sOut->params.push_back(res);
+                            cleanedOut.push_back(sOut);
+                        }
+                    }
+
+                }
+
+                nextExpansion.emplace_back();
                 break;
                 
             }
-            break;
         }
         if(!foundExpansion){
             nextExpansion.push_back(currIns);
         }
     }
 
-    return recurExpand(nextExpansion,rules, paramMapping, depth+1);
+    return recurExpand(nextExpansion,rules, depth+1);
 }
 
 std::vector<ParaInstruction*> generateExpansion(std::tuple<ParaInstruction*, std::vector<Rule>> data){
@@ -100,8 +146,7 @@ std::vector<ParaInstruction*> generateExpansion(std::tuple<ParaInstruction*, std
     std::vector<Rule> rules = std::get<1>(data);
 
 
-    std::unordered_map<std::string, float> paramMapping = generateParamMapping(curr, rules);
-    return recurExpand(curr,rules,paramMapping, 0);
+    return recurExpand(curr,rules, 0);
 }
 
 ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unordered_map<std::string, float> constants){
@@ -200,7 +245,8 @@ std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
             }
             
         }
-        rule.RHS = RHSVec;
+
+        rule.RHS = {RHSVec};
         rule.probs = probs;
         rules.push_back(rule);
     }
