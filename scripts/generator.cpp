@@ -26,26 +26,39 @@ const std::vector<char> operators = {'*', '+', '-', '/', '^'};
 std::unordered_map<char, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
     
     std::unordered_map<char, float> paramMapping;
+    std::unordered_map<char,int> seenTokens;
+
+    std::vector<char> keys;
+    std::vector<float> values;
 
     for(const auto& rule : rules){
         std::vector<std::variant<float, std::string>> params = rule.LHS->params;
-
+        seenTokens[rule.LHS->token] = 1;
         for(const auto& param : params){
             const std::string* strPtr = std::get_if<std::string>(&param);
-            paramMapping[(*strPtr)[0]] = 0;
+            char token = (*strPtr)[0];
+            keys.push_back(token);
+            
         }
     }
 
     for(const auto& ins : curr){
-        std::unordered_map<char, float>::const_iterator it = paramMapping.find(ins->token);
+        std::unordered_map<char, int>::const_iterator it = seenTokens.find(ins->token);
 
-        if(it == paramMapping.end()) continue;
+        if(it == seenTokens.end()) continue;
 
         std::vector<std::variant<float, std::string>> params = ins->params;
         for(const auto& param : params){
             const float *val = std::get_if<float>(&param);
-            paramMapping[ins->token] = *val;
+            values.push_back(*val);
         }
+    }
+
+    for(int i = 0; i < keys.size(); i++){
+        char currKey = keys.at(i);
+        float currVal = values.at(i);
+
+        paramMapping[currKey] = currVal;
     }
 
 
@@ -81,24 +94,41 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
                 std::vector<ParaInstruction*> cleanedOut;
                 // convert parameters from string to float
                 for(const auto& sOut : selectedOut){
+                    int paramCount = 0;
                     for(const auto& param : sOut->params){
+                        if(paramCount == 1){
+                            cout << "im here" << "\n";
+                        }
                         if(std::holds_alternative<float>(param)) continue;
-                        
+                            
+                        auto arrIdx = sOut->params.begin() + paramCount;
+
                         const std::string* strPtr = std::get_if<std::string>(&param);
                         std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
                         // no operator was present
                         if(operatorSplit.size() == 1){
                             float val = paramMapping[operatorSplit[0][0]];
-                            sOut->params.pop_back();
-                            sOut->params.push_back(val);
-
-                            cleanedOut.push_back(sOut);
+                            sOut->params.erase(arrIdx);
+                            sOut->params.insert(arrIdx, val);
                         }
                         // operator was presesnt, must have 3 components
                         else{
-                            float val1 = paramMapping[operatorSplit[0][0]];
-                            float val2 = paramMapping[operatorSplit[2][0]];
-                            sOut->params.pop_back();
+                            float val1, val2;
+
+                            if(Util::isNumeric(operatorSplit[0])){
+                                val1 = std::stof(operatorSplit[0]);
+                            }
+                            else{
+                                val1 = paramMapping[operatorSplit[0][0]];
+                            }
+                            if(Util::isNumeric(operatorSplit[2])){
+                                val2 = std::stof(operatorSplit[2]);
+                            }
+                            else{
+                                val2 =  paramMapping[operatorSplit[2][0]];
+                            }
+
+                            sOut->params.erase(arrIdx);
                             
                             char op = operatorSplit[1][0];
                             float res;
@@ -119,14 +149,14 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
                                     res = std::pow(val1, val2);
                                 }
                             }
-                            sOut->params.push_back(res);
-                            cleanedOut.push_back(sOut);
+                            sOut->params.insert(arrIdx, res);
                         }
+                        paramCount++;
                     }
-
+                    cleanedOut.push_back(sOut);
                 }
 
-                nextExpansion.emplace_back();
+                nextExpansion.insert(nextExpansion.end(), cleanedOut.begin(), cleanedOut.end());
                 break;
                 
             }
@@ -174,6 +204,7 @@ ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unorder
             // split by operator
             std::vector<std::string> paramOpSplit = Util::splitString(param, operators, true);
             std::string fullParam = "";
+            bool skipped = false;
             for(const auto& operand : paramOpSplit){
                 std::unordered_map<std::string, float>::const_iterator it = constants.find(operand);
                 if(it == constants.end()){
@@ -181,10 +212,18 @@ ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unorder
                 }
                 else{
                     float replacement = it->second;
+                    // if this is the only parameter, dont convert to a string
+                    if(paramOpSplit.size() == 1){
+                        skipped = true;
+                        paramsVariant.push_back(replacement);
+                        break;
+                    }
                     fullParam += std::to_string(replacement);
                 }
             }
-            paramsVariant.push_back(fullParam);
+            if(!skipped){
+                paramsVariant.push_back(fullParam);
+            }
         }
     }
 
@@ -242,11 +281,13 @@ std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
             for(const auto& tok : outTokens){
                 ParaInstruction* paraIns = encodeInstruction(tok, constants);
                 RHSVec.push_back(paraIns);
+
             }
+            rule.RHS.push_back(RHSVec);
+            RHSVec.clear();
             
         }
 
-        rule.RHS = {RHSVec};
         rule.probs = probs;
         rules.push_back(rule);
     }
