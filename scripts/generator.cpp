@@ -297,25 +297,39 @@ std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
     return std::make_tuple(axiomIns, rules);
 }
 
-int writeInstructionsToJSON(std::string expanded, float theta){
-    std::vector<Token> tokens;
+int writeInstructionsToJSON(std::vector<ParaInstruction*> expanded) {
+    json data;
+    json jsonTokens = json::array();
 
-    for(const auto& c : expanded){
-        if(std::isspace(c)) continue;
-        Token token = charToToken(c);
-        tokens.push_back(token);
+    for (ParaInstruction* instr : expanded) {
+        json instructionJson;
+        
+        std::string tokenStr(1, instr->token);
+        instructionJson["token"] = tokenStr;
+
+        json paramsJson = json::array();
+        
+        for (std::variant<float, std::string>& param : instr->params) {
+            if (std::holds_alternative<float>(param)) {
+                paramsJson.push_back(std::get<float>(param));
+            } else if (std::holds_alternative<std::string>(param)) {
+                paramsJson.push_back(std::get<std::string>(param));
+            }
+        }
+        
+        instructionJson["params"] = paramsJson;
+        jsonTokens.push_back(instructionJson);
     }
 
-    json data;
-    data["instructions"] = tokens;
-    data["theta"] = theta;
+    data["instructions"] = jsonTokens;
 
     std::ofstream outputFile("./instructions.json");
 
-    if(!outputFile.is_open()) return 1;
+    if (!outputFile.is_open()) return 1;
 
     outputFile << data.dump(4);
     outputFile.close();
+    
     return 0;
 }
 
@@ -325,7 +339,7 @@ int main(int argc, char** argv){
     std::tuple<ParaInstruction*, std::vector<Rule>> data = parseJSON();
     std::vector<ParaInstruction*> expanded = generateExpansion(data);
 
-    // writeInstructionsToJSON(expanded, theta);
+    writeInstructionsToJSON(expanded);
     
     return 0;
 }
