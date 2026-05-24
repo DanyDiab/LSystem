@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include "tokens.hpp"
 #include <glm/gtc/quaternion.hpp>
-
+#include "./rule.hpp"
 
 
 struct Turtle {
@@ -15,8 +15,8 @@ struct Turtle {
     float scale;
 };
 
-void moveTurtleForward(Turtle *turtle);
-void recordTurtlePosition(Turtle turtle);
-void executeInstruction(Token token);
+void moveTurtleForward(Turtle *turtle, float distance);
+void recordTurtlePosition(Turtle *turtle, float distance);
+void executeInstruction(const ParaInstructionTok* instruction);
 std::tuple<std::vector<glm::mat4>, std::vector<float>> executeInstructions();
-void readInJSON();
+std::vector<ParaInstructionTok> readInJSON(const std::string& filePath);

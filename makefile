@@ -6,10 +6,10 @@ LINKS = -fsanitize=address -g -lGLEW -lglut -lGL -lGLU
 OUTGEN = generator
 OUTREN = renderer
 
-generator : $(SRCGEN)
+$(OUTGEN) : $(SRCGEN)
 	g++ $(SRCGEN) -o $(OUTGEN) $(LINKS)
 
-lsystem : $(SRCREN)
+$(OUTREN) : $(SRCREN)
 	g++ $(SRCREN) -o $(OUTREN) $(LINKS)
 
 all  : $(SRCGEN) $(SRCREN)

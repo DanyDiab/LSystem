@@ -1,21 +1,31 @@
 {
     "constants": {
-        "r1": 0.8,
-        "wr": 0.707,
-        "theta": 25
+        "r1": 0.9,
+        "r2": 0.6,
+        "a0": 45.0,
+        "a2": 45.0,
+        "d": 137.5,
+        "wr": 0.707
     },
     "axiom": "A(1, 10)",
     "rules": {
         "A(l, w)": [
-            { 
-                "prob": 0.5, 
-                "out": "!(w)F(l)[&(theta)A(l*r1, w*wr)]/(120)[&(theta)A(l*r1, w*wr)]" 
-            },
             {
-                "prob": 1.00,
-                "out": "!(w)F(l)[+(theta)A(l*r1, w*wr)][-(theta)A(l*r1, w*wr)]" 
+                "prob": 1.0,
+                "out": "!(w)F(l)[&(a0)B(l*r2, w*wr)]/(d)A(l*r1, w*wr)"
             }
-            
+        ],
+        "B(l, w)": [
+            {
+                "prob": 1.0,
+                "out": "!(w)F(l)[-(a2)C(l*r2, w*wr)]C(l*r1, w*wr)"
+            }
+        ],
+        "C(l, w)": [
+            {
+                "prob": 1.0,
+                "out": "!(w)F(l)[+(a2)B(l*r2, w*wr)]B(l*r1, w*wr)"
+            }
         ]
     }
 }
