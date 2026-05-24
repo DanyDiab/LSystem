@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 
+#include "tokens.hpp"
 
 
 
@@ -13,6 +14,11 @@
 struct ParaInstruction{
     char token;
     std::vector<std::variant<float, std::string>> params;
+};
+
+struct ParaInstructionTok{
+    Token token;
+    std::vector<float> params;
 };
 
 struct Rule{

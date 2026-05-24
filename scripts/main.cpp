@@ -30,7 +30,6 @@ void init() {
 
     shader->load("./shaders/vert.vert", "./shaders/frag.frag");
 
-    readInJSON();
     std::tuple<std::vector<glm::mat4>, std::vector<float>> instaceInfo = executeInstructions();
 
     std::vector<glm::mat4> models = std::get<0>(instaceInfo);

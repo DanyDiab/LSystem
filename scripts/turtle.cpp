@@ -1,4 +1,7 @@
 #include "./headers/turtle.hpp"
+#include "./headers/tokens.hpp"
+#include "./headers/rule.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -7,11 +10,9 @@
 using namespace std;
 using json = nlohmann::json;
 
-std::string filePath = "./instructions.json";
-const float length = 4;
+const std::string filePath = "./instructions.json";
 const float DEGTORAD = 0.01745329f;
 int thetaDelta = 0;
-std::vector<Token> instructions;
 Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
@@ -19,10 +20,10 @@ std::vector<glm::mat4> models;
 std::vector<float> widths; 
 float lineWidth = 1;
 
-void moveTurtleForward(Turtle *turtle){
+void moveTurtleForward(Turtle *turtle, float distance){
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 worldForward = turtle->quaternion * localForward;
-    turtle->pos += worldForward * length;
+    turtle->pos += worldForward * distance;
 }
 
 void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
@@ -32,7 +33,7 @@ void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
 }
 
 
-void recordTurtlePosition(Turtle *turtle){
+void recordTurtlePosition(Turtle *turtle, float distance){
     float scale = turtle->scale;
     glm::mat4 identity = glm::mat4(1.0f);
 
@@ -40,61 +41,66 @@ void recordTurtlePosition(Turtle *turtle){
 
     model *= glm::mat4_cast(turtle->quaternion);
 
-    model = glm::scale(model, glm::vec3(scale, scale, length));
+    model = glm::scale(model, glm::vec3(scale, scale, distance));
 
     models.push_back(model);
     widths.push_back(scale);
 }
 
-void executeInstruction(Token token){
+void executeInstruction(const ParaInstructionTok* instruction){
+    Token token = instruction->token;
+    std::vector<float> params = instruction->params;
+    
     switch (token) {
         case Token::F: {
-            recordTurtlePosition(&nextTurtle);
-            moveTurtleForward(&nextTurtle);
+            float distance = params[0];
+
+            recordTurtlePosition(&nextTurtle, distance);
+            moveTurtleForward(&nextTurtle, distance);
             break;
         }
         case Token::G: {
-            recordTurtlePosition(&nextTurtle);
-            moveTurtleForward(&nextTurtle);
+            float distance = params[0];
+
+            recordTurtlePosition(&nextTurtle, distance);
+            moveTurtleForward(&nextTurtle, distance);
             break;
         }
         case Token::f: {
-            moveTurtleForward(&nextTurtle);
+            float distance = params[0];
+
+            moveTurtleForward(&nextTurtle, distance);
             break;
         }
         case Token::g: {
-            moveTurtleForward(&nextTurtle);
+            float distance = params[0];
+
+            moveTurtleForward(&nextTurtle, distance);
             break;
         }
         case Token::Z: {
             break;
         }
-        case Token::TurnLeft: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,1,0), thetaDelta);
+        case Token::Yaw: {
+            float angle = params.at(0);
+
+            rotateTurtle(&nextTurtle, glm::vec3(0,1,0), angle);
             break;
         }
-        case Token::TurnRight: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,1,0), -thetaDelta);
+        case Token::Pitch: {
+            float angle = params.at(0);
+
+            rotateTurtle(&nextTurtle, glm::vec3(1,0,0), angle);
+            break;
+        }
+        case Token::Roll: {
+            float angle = params.at(0);
+
+            rotateTurtle(&nextTurtle, glm::vec3(0,0,1), angle);
             break;
         }
         case Token::TurnAround: {
             rotateTurtle(&nextTurtle, glm::vec3(0,1,0), 180);
-            break;
-        }
-        case Token::PitchDown: {
-            rotateTurtle(&nextTurtle, glm::vec3(1,0,0), thetaDelta);
-            break;
-        }
-        case Token::PitchUp: {
-            rotateTurtle(&nextTurtle, glm::vec3(1,0,0), -thetaDelta);
-            break;
-        }
-        case Token::RollLeft: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,0,1), thetaDelta);
-            break;
-        }
-        case Token::RollRight: {
-            rotateTurtle(&nextTurtle, glm::vec3(0,0,1), -thetaDelta);
             break;
         }
         case Token::PushState: {
@@ -106,15 +112,11 @@ void executeInstruction(Token token){
             turtleStack.pop();
             break;
         }
-        case Token::DecreaseWidth: {
-            if (nextTurtle.scale <= 1.0f) {
-                return;
+        case Token::Width: {
+            if (params.empty()) {
+                break;
             }
-            nextTurtle.scale -= 1.0f;
-            break;
-        }
-        case Token::IncreaseWidth: {
-            nextTurtle.scale += 1.0f;
+            nextTurtle.scale = params[0];
             break;
         }
         case Token::NextColor: {
@@ -134,15 +136,20 @@ void executeInstruction(Token token){
 }
 
 std::tuple<std::vector<glm::mat4>, std::vector<float>> executeInstructions(){
+    std::vector<ParaInstructionTok> instructions = readInJSON(filePath);
     models.clear();
+    widths.clear();
+
     models.reserve(instructions.size());
+    widths.reserve(instructions.size());
+
     turtle.scale = 1.0f;
     turtle.pos = glm::vec3(0, 0, 0);
     turtle.quaternion = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     nextTurtle = turtle;
 
     for(const auto& instruction : instructions){
-        executeInstruction(instruction);
+        executeInstruction(&instruction);
         turtle = nextTurtle;
     }
     
@@ -150,16 +157,57 @@ std::tuple<std::vector<glm::mat4>, std::vector<float>> executeInstructions(){
 }
 
 
-void readInJSON(){
+std::vector<ParaInstructionTok> readInJSON(const std::string& filePath) {
+    std::vector<ParaInstructionTok> parsedInstructions;
     std::ifstream file(filePath);
 
-    if(!file.is_open()){
-        cout << "could not read in instructions";
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filePath << "\n";
+        return parsedInstructions;
     }
 
-    json parsedData;
-    file >> parsedData;
+    nlohmann::json jsonData;
+    file >> jsonData;
 
-    instructions = parsedData["instructions"].get<std::vector<Token>>();
-    thetaDelta = parsedData["theta"].get<int>();
+    if (!jsonData.contains("instructions")) {
+        std::cerr << "Error: JSON root does not contain 'instructions' array.\n";
+        return parsedInstructions;
+    }
+
+    const nlohmann::json& instructionsArray = jsonData["instructions"];
+
+    if (!instructionsArray.is_array()) {
+        std::cerr << "Error: 'instructions' key is not an array.\n";
+        return parsedInstructions;
+    }
+
+    for (const nlohmann::json& item : instructionsArray) {
+        if (!item.contains("token") || !item["token"].is_string()) {
+            continue;
+        }
+
+        ParaInstructionTok instruction;
+        std::string tokenString = item["token"].get<std::string>();
+        instruction.token = charToToken(tokenString[0]);
+
+        if (!item.contains("params") || !item["params"].is_array()) {
+            parsedInstructions.push_back(instruction);
+            continue;
+        }
+
+        const nlohmann::json& paramsArray = item["params"];
+        
+        for (const nlohmann::json& param : paramsArray) {
+            if (!param.is_number()) {
+                continue;
+            }
+            
+            float paramValue = param.get<float>();
+            instruction.params.push_back(paramValue);
+        }
+
+        parsedInstructions.push_back(instruction);
+    }
+
+    return parsedInstructions;
 }

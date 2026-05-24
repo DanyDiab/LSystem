@@ -20,7 +20,7 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 5;
+int MAXDEPTH = 12;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
 
 std::unordered_map<char, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
@@ -83,86 +83,87 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
             std::vector<float> probs = rule.probs;
             std::vector<std::vector<ParaInstruction*>> out = rule.RHS;
             
-            int size = probs.size();
             float runningProb = 0.0f;
-            for(int i = 0; i < size; i++){
+            std::vector<ParaInstruction*> selectedOut;
+            for(int i = 0; i < probs.size(); i++){
                 runningProb += probs.at(i);
 
                 if(rand >= runningProb) continue;
                 
-                std::vector<ParaInstruction*> selectedOut = out.at(i);
-                std::vector<ParaInstruction*> cleanedOut;
-                // convert parameters from string to float
-                for(const auto& sOut : selectedOut){
-                    int paramCount = 0;
-                    for(const auto& param : sOut->params){
-                        if(paramCount == 1){
-                            cout << "im here" << "\n";
-                        }
-                        if(std::holds_alternative<float>(param)) continue;
-                            
-                        auto arrIdx = sOut->params.begin() + paramCount;
-
-                        const std::string* strPtr = std::get_if<std::string>(&param);
-                        std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
-                        // no operator was present
-                        if(operatorSplit.size() == 1){
-                            float val = paramMapping[operatorSplit[0][0]];
-                            sOut->params.erase(arrIdx);
-                            sOut->params.insert(arrIdx, val);
-                        }
-                        // operator was presesnt, must have 3 components
-                        else{
-                            float val1, val2;
-
-                            if(Util::isNumeric(operatorSplit[0])){
-                                val1 = std::stof(operatorSplit[0]);
-                            }
-                            else{
-                                val1 = paramMapping[operatorSplit[0][0]];
-                            }
-                            if(Util::isNumeric(operatorSplit[2])){
-                                val2 = std::stof(operatorSplit[2]);
-                            }
-                            else{
-                                val2 =  paramMapping[operatorSplit[2][0]];
-                            }
-
-                            sOut->params.erase(arrIdx);
-                            
-                            char op = operatorSplit[1][0];
-                            float res;
-                            switch(op){
-                                case('*'):{
-                                    res = val1 * val2;
-                                    break;
-                                }
-                                case('+'):{
-                                    res = val1 + val2;
-                                    break;
-                                }
-                                case('/'):{
-                                    res = val1 / val2;
-                                    break;
-                                }
-                                case('^'):{
-                                    res = std::pow(val1, val2);
-                                }
-                            }
-                            sOut->params.insert(arrIdx, res);
-                        }
-                        paramCount++;
-                    }
-                    cleanedOut.push_back(sOut);
-                }
-
-                nextExpansion.insert(nextExpansion.end(), cleanedOut.begin(), cleanedOut.end());
-                break;
-                
+                selectedOut = out.at(i);
             }
+
+            std::vector<ParaInstruction*> cleanedOut;
+            // convert parameters from string to float
+            for(const auto& sOut : selectedOut){
+                ParaInstruction* sOutPtr = new ParaInstruction(*sOut);
+                int paramCount = 0;
+                for(const auto& param : sOutPtr->params){
+
+                    if(std::holds_alternative<float>(param)) continue;
+                        
+                    auto arrIdx = sOutPtr->params.begin() + paramCount;
+
+                    const std::string* strPtr = std::get_if<std::string>(&param);
+                    std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
+                    // no operator was present
+                    if(operatorSplit.size() == 1){
+                        float val = paramMapping[operatorSplit[0][0]];
+                        sOutPtr->params.erase(arrIdx);
+                        sOutPtr->params.insert(arrIdx, val);
+                    }
+                    // operator was presesnt, must have 3 components
+                    else{
+                        float val1, val2;
+
+                        if(Util::isNumeric(operatorSplit[0])){
+                            val1 = std::stof(operatorSplit[0]);
+                        }
+                        else{
+                            val1 = paramMapping[operatorSplit[0][0]];
+                        }
+                        if(Util::isNumeric(operatorSplit[2])){
+                            val2 = std::stof(operatorSplit[2]);
+                        }
+                        else{
+                            val2 =  paramMapping[operatorSplit[2][0]];
+                        }
+
+                        sOutPtr->params.erase(arrIdx);
+                        
+                        char op = operatorSplit[1][0];
+                        float res;
+                        switch(op){
+                            case('*'):{
+                                res = val1 * val2;
+                                break;
+                            }
+                            case('+'):{
+                                res = val1 + val2;
+                                break;
+                            }
+                            case('/'):{
+                                res = val1 / val2;
+                                break;
+                            }
+                            case('^'):{
+                                res = std::pow(val1, val2);
+                                break;
+                            }
+                        }
+                        sOutPtr->params.insert(arrIdx, res);
+                    }
+                    paramCount++;
+                }
+                cleanedOut.push_back(sOutPtr);
+            }
+            nextExpansion.insert(nextExpansion.end(), cleanedOut.begin(), cleanedOut.end());
         }
         if(!foundExpansion){
             nextExpansion.push_back(currIns);
+        }
+        else{
+            delete currIns;
         }
     }
 
@@ -171,7 +172,7 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
 
 std::vector<ParaInstruction*> generateExpansion(std::tuple<ParaInstruction*, std::vector<Rule>> data){
     ParaInstruction* axiom = std::get<0>(data);
-    std::vector<ParaInstruction*> curr = {axiom}; 
+    std::vector<ParaInstruction*> curr = {new ParaInstruction(*axiom)}; 
 
     std::vector<Rule> rules = std::get<1>(data);
 
@@ -240,7 +241,7 @@ std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
     std::vector<Rule> rules;
     std::unordered_map<std::string, float> constants;
     std::vector<ParaInstruction*> RHSVec;
-    ParaInstruction* axiomIns = new ParaInstruction();
+    ParaInstruction* axiomIns;
     if (!file.is_open()){
         cout << "file was not found or didnt open";
         return std::make_tuple(axiomIns, rules);
@@ -341,5 +342,22 @@ int main(int argc, char** argv){
 
     writeInstructionsToJSON(expanded);
     
+    for(const auto& ins : expanded){
+        delete ins;
+    }
+
+    std::vector<Rule>& rules = std::get<1>(data);
+    for(auto& rule : rules) {
+        delete rule.LHS;
+        
+        for(auto& probBranch : rule.RHS) {
+            for(auto& ins : probBranch) {
+                delete ins;
+            }
+        }
+    }
+
+    delete std::get<0>(data);
+
     return 0;
 }
