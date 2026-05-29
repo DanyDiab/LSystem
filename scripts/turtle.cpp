@@ -2,6 +2,9 @@
 #include "./headers/tokens.hpp"
 #include "./headers/rule.hpp"
 
+#include <glm/ext/quaternion_geometric.hpp>
+#include <glm/fwd.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -30,6 +33,27 @@ void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
     float angleRadians = angle * DEGTORAD;
     glm::quat rotation = glm::angleAxis(angleRadians, axis);
     turtle->quaternion = turtle->quaternion * rotation;
+}
+
+void RollTurtleToHorizontal(Turtle *turtle){
+    glm::vec3 globalUp = glm::vec3(0,1,0);
+
+    glm::quat tQuat = turtle->quaternion;
+    
+    glm::vec3 heading = tQuat * glm::vec3(0.0f,0.0f, 1.0f);
+    glm::vec3 up = tQuat * glm::vec3(0.0f,1.0f, 1.0f);
+
+
+    glm::vec3 numerator = glm::cross(globalUp,heading);
+
+    float denom = sqrt((numerator.x * numerator.x) + (numerator.y * numerator.y) + (numerator.z * numerator.z));
+    glm::vec3 left = numerator / denom;
+
+    glm::mat3 rotation = glm::mat3(-left,up,-heading);
+
+    glm::quat newQuat = glm::quat_cast(rotation);
+
+    turtle->quaternion = newQuat;
 }
 
 
@@ -113,11 +137,11 @@ void executeInstruction(const ParaInstructionTok* instruction){
             break;
         }
         case Token::Width: {
-            if (params.empty()) {
-                break;
-            }
             nextTurtle.scale = params[0];
             break;
+        }
+        case Token::HorizontalRollAlign: {
+            RollTurtleToHorizontal(&nextTurtle);
         }
         case Token::NextColor: {
             break;
