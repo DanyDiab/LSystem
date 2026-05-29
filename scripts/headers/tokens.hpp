@@ -20,7 +20,8 @@ enum class Token {
     Width,
     NextColor,
     DrawPolygon,
-    NonTerminal
+    NonTerminal,
+    HorizontalRollAlign
 };
 
 
@@ -61,7 +62,8 @@ inline Token charToToken(char charToConvert) {
         {'!', Token::Width},
         {'#', Token::Width},
         {'\'', Token::NextColor},
-        {'@', Token::DrawPolygon}
+        {'@', Token::DrawPolygon},
+        {'$', Token::HorizontalRollAlign}
     };
 
     std::unordered_map<char, Token>::const_iterator it = tokenMap.find(charToConvert);

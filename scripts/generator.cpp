@@ -20,8 +20,10 @@
 using namespace std;
 using json = nlohmann::json;
 
-int MAXDEPTH = 12;
+int MAXDEPTH = 10;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
+const std::string inFile = "./systems/paraSystem.json";
+const std::string outFile = "./instructions.json";
 
 std::unordered_map<char, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
     
@@ -236,7 +238,7 @@ ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unorder
 
 // <axiom, rules>
 std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
-    std::ifstream file("./systems/paraSystem.json");
+    std::ifstream file(inFile);
 
     std::vector<Rule> rules;
     std::unordered_map<std::string, float> constants;
@@ -324,7 +326,7 @@ int writeInstructionsToJSON(std::vector<ParaInstruction*> expanded) {
 
     data["instructions"] = jsonTokens;
 
-    std::ofstream outputFile("./instructions.json");
+    std::ofstream outputFile(outFile);
 
     if (!outputFile.is_open()) return 1;
 
