@@ -223,7 +223,7 @@ ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unorder
         return paraIns;
     }
     std::string params = split[1];
-    std::vector<std::string> paramSplit = Util::splitString(params,paramDelim);
+    std::vector<std::string> paramSplit = Util::splitString(params, paramDelim);
 
     for(const auto& param : paramSplit){
         if(Util::isNumeric(param)){
