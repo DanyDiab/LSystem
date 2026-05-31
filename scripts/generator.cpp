@@ -25,52 +25,38 @@ const std::vector<char> operators = {'*', '+', '-', '/', '^'};
 const std::string inFile = "./systems/paraSystem.json";
 const std::string outFile = "./instructions.json";
 
-std::unordered_map<char, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
+std::unordered_map<char, float> generateParamMapping(ParaInstruction* ins, std::vector<Rule> rules){
     
     std::unordered_map<char, float> paramMapping;
-    std::unordered_map<char,int> seenTokens;
 
-    std::vector<char> keys;
-    std::vector<float> values;
+    char insTok = ins->token;
 
     for(const auto& rule : rules){
-        std::vector<std::variant<float, std::string>> params = rule.LHS->params;
-        seenTokens[rule.LHS->token] = 1;
-        for(const auto& param : params){
-            const std::string* strPtr = std::get_if<std::string>(&param);
-            char token = (*strPtr)[0];
-            keys.push_back(token);
+        if(rule.LHS->token != insTok) continue;
+        
+        std::vector<std::variant<float, std::string>> ruleParams = rule.LHS->params;
+        std::vector<std::variant<float, std::string>> insParams = ins->params;
+        for(int i = 0; i < ruleParams.size(); i++){
+
+            std::variant<float, std::string> ruleParam = ruleParams.at(i);
+            std::variant<float, std::string> insParam = insParams.at(i);
+
+            const std::string* strPtr = std::get_if<std::string>(&ruleParam);
+            char key = (*strPtr)[0];
+
+            const float *val = std::get_if<float>(&insParam);
             
+            paramMapping[key] = *val;
         }
     }
-
-    for(const auto& ins : curr){
-        std::unordered_map<char, int>::const_iterator it = seenTokens.find(ins->token);
-
-        if(it == seenTokens.end()) continue;
-
-        std::vector<std::variant<float, std::string>> params = ins->params;
-        for(const auto& param : params){
-            const float *val = std::get_if<float>(&param);
-            values.push_back(*val);
-        }
-    }
-
-    for(int i = 0; i < keys.size(); i++){
-        char currKey = keys.at(i);
-        float currVal = values.at(i);
-
-        paramMapping[currKey] = currVal;
-    }
-
 
     return paramMapping;
 }
 
 
-void parseOperations(std::vector<std::string> operatorSplit, std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr, auto arrIdx){
+void parseOperations(std::vector<std::string> operatorSplit, std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr, std::vector<std::variant<float, std::string>>::iterator arrIdx){
     float val1, val2;
-
+    
     if(Util::isNumeric(operatorSplit[0])){
         val1 = std::stof(operatorSplit[0]);
     }
@@ -161,10 +147,11 @@ std::vector<ParaInstruction*> selectStochRHS(const Rule* rule){
 
 std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, std::vector<Rule> rules, int depth){
     if(depth == MAXDEPTH) return curr;
-    std::unordered_map<char, float> paramMapping = generateParamMapping(curr, rules);
+
 
     std::vector<ParaInstruction*> nextExpansion;
     for(const auto& currIns : curr){
+        std::unordered_map<char, float> paramMapping = generateParamMapping(currIns, rules);
 
         bool foundExpansion = false;
         for(const auto& rule : rules){
