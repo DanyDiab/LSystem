@@ -210,15 +210,20 @@ ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unorder
     std::vector<char> delim = {'('};
     std::vector<char> paramDelim = {',', ')', ' '};
 
+    std::vector<std::variant<float, std::string>> paramsVariant;
+
     std::vector<std::string> split = Util::splitString(instructionToEncode, delim);
 
     char token = split[0][0];
 
+    if(split.size() == 1){
+        paraIns->token = token;
+        paraIns->params = paramsVariant;
+
+        return paraIns;
+    }
     std::string params = split[1];
     std::vector<std::string> paramSplit = Util::splitString(params,paramDelim);
-
-    std::vector<std::variant<float, std::string>> paramsVariant;
-
 
     for(const auto& param : paramSplit){
         if(Util::isNumeric(param)){
