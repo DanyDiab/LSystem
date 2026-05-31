@@ -68,6 +68,97 @@ std::unordered_map<char, float> generateParamMapping(std::vector<ParaInstruction
 }
 
 
+void parseOperations(std::vector<std::string> operatorSplit, std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr, auto arrIdx){
+    float val1, val2;
+
+    if(Util::isNumeric(operatorSplit[0])){
+        val1 = std::stof(operatorSplit[0]);
+    }
+    else{
+        val1 = paramMapping[operatorSplit[0][0]];
+    }
+    if(Util::isNumeric(operatorSplit[2])){
+        val2 = std::stof(operatorSplit[2]);
+    }
+    else{
+        val2 =  paramMapping[operatorSplit[2][0]];
+    }
+
+    sOutPtr->params.erase(arrIdx);
+
+    char op = operatorSplit[1][0];
+    float res;
+    switch(op){
+        case('*'):{
+            res = val1 * val2;
+            break;
+        }
+        case('+'):{
+            res = val1 + val2;
+            break;
+        }
+        case('/'):{
+            res = val1 / val2;
+            break;
+        }
+        case('^'):{
+            res = std::pow(val1, val2);
+            break;
+        }
+    }
+    sOutPtr->params.insert(arrIdx, res);
+}
+
+void cleanParams(std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr){
+    int paramCount = 0;
+
+    for(const auto& param : sOutPtr->params){
+
+        if(std::holds_alternative<float>(param)) continue;
+            
+        auto arrIdx = sOutPtr->params.begin() + paramCount;
+
+        const std::string* strPtr = std::get_if<std::string>(&param);
+        std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
+        // no operator was present
+        if(operatorSplit.size() == 1){
+            float val = paramMapping[operatorSplit[0][0]];
+            sOutPtr->params.erase(arrIdx);
+            sOutPtr->params.insert(arrIdx, val);
+        }
+        // operator was presesnt, must have 3 components
+        else{
+            parseOperations(operatorSplit,paramMapping,sOutPtr,arrIdx);
+        }
+        paramCount++;
+    }
+}
+
+
+std::vector<ParaInstruction*> selectStochRHS(const Rule* rule){
+
+    float rand = static_cast<float>(std::rand() / static_cast<float>(RAND_MAX));
+
+    std::vector<float> probs = rule->probs;
+    std::vector<std::vector<ParaInstruction*>> out = rule->RHS;
+
+    float runningProb = 0.0f;
+    std::vector<ParaInstruction*> selectedOut;
+
+    for(int i = 0; i < probs.size(); i++){
+        runningProb += probs.at(i);
+
+        if(rand >= runningProb) continue;
+        
+        selectedOut = out.at(i);
+    }
+
+    return selectedOut;
+}
+
+// for each instruciton
+// if params contains string, create mapping 
+
 std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, std::vector<Rule> rules, int depth){
     if(depth == MAXDEPTH) return curr;
     std::unordered_map<char, float> paramMapping = generateParamMapping(curr, rules);
@@ -80,83 +171,14 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
             if(rule.LHS->token != currIns->token) continue;
 
             foundExpansion = true;
-            float rand = static_cast<float>(std::rand() / static_cast<float>(RAND_MAX));
 
-            std::vector<float> probs = rule.probs;
-            std::vector<std::vector<ParaInstruction*>> out = rule.RHS;
-            
-            float runningProb = 0.0f;
-            std::vector<ParaInstruction*> selectedOut;
-            for(int i = 0; i < probs.size(); i++){
-                runningProb += probs.at(i);
-
-                if(rand >= runningProb) continue;
-                
-                selectedOut = out.at(i);
-            }
+            std::vector<ParaInstruction*> selectedOut = selectStochRHS(&rule);
 
             std::vector<ParaInstruction*> cleanedOut;
             // convert parameters from string to float
             for(const auto& sOut : selectedOut){
                 ParaInstruction* sOutPtr = new ParaInstruction(*sOut);
-                int paramCount = 0;
-                for(const auto& param : sOutPtr->params){
-
-                    if(std::holds_alternative<float>(param)) continue;
-                        
-                    auto arrIdx = sOutPtr->params.begin() + paramCount;
-
-                    const std::string* strPtr = std::get_if<std::string>(&param);
-                    std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
-                    // no operator was present
-                    if(operatorSplit.size() == 1){
-                        float val = paramMapping[operatorSplit[0][0]];
-                        sOutPtr->params.erase(arrIdx);
-                        sOutPtr->params.insert(arrIdx, val);
-                    }
-                    // operator was presesnt, must have 3 components
-                    else{
-                        float val1, val2;
-
-                        if(Util::isNumeric(operatorSplit[0])){
-                            val1 = std::stof(operatorSplit[0]);
-                        }
-                        else{
-                            val1 = paramMapping[operatorSplit[0][0]];
-                        }
-                        if(Util::isNumeric(operatorSplit[2])){
-                            val2 = std::stof(operatorSplit[2]);
-                        }
-                        else{
-                            val2 =  paramMapping[operatorSplit[2][0]];
-                        }
-
-                        sOutPtr->params.erase(arrIdx);
-                        
-                        char op = operatorSplit[1][0];
-                        float res;
-                        switch(op){
-                            case('*'):{
-                                res = val1 * val2;
-                                break;
-                            }
-                            case('+'):{
-                                res = val1 + val2;
-                                break;
-                            }
-                            case('/'):{
-                                res = val1 / val2;
-                                break;
-                            }
-                            case('^'):{
-                                res = std::pow(val1, val2);
-                                break;
-                            }
-                        }
-                        sOutPtr->params.insert(arrIdx, res);
-                    }
-                    paramCount++;
-                }
+                cleanParams(paramMapping, sOutPtr);
                 cleanedOut.push_back(sOutPtr);
             }
             nextExpansion.insert(nextExpansion.end(), cleanedOut.begin(), cleanedOut.end());
