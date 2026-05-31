@@ -151,11 +151,12 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
 
     std::vector<ParaInstruction*> nextExpansion;
     for(const auto& currIns : curr){
-        std::unordered_map<char, float> paramMapping = generateParamMapping(currIns, rules);
 
         bool foundExpansion = false;
         for(const auto& rule : rules){
             if(rule.LHS->token != currIns->token) continue;
+            
+            std::unordered_map<char, float> paramMapping = generateParamMapping(currIns, rules);
 
             foundExpansion = true;
 
