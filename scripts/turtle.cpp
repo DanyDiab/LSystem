@@ -32,7 +32,7 @@ void moveTurtleForward(Turtle *turtle, float distance){
 void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
     float angleRadians = angle * DEGTORAD;
     glm::quat rotation = glm::angleAxis(angleRadians, axis);
-    turtle->quaternion = turtle->quaternion * rotation;
+    turtle->quaternion = glm::normalize(turtle->quaternion * rotation);
 }
 
 void RollTurtleToHorizontal(Turtle *turtle){
@@ -41,15 +41,13 @@ void RollTurtleToHorizontal(Turtle *turtle){
     glm::quat tQuat = turtle->quaternion;
     
     glm::vec3 heading = tQuat * glm::vec3(0.0f,0.0f, 1.0f);
-    glm::vec3 up = tQuat * glm::vec3(0.0f,1.0f, 1.0f);
+    glm::vec3 up = tQuat * glm::vec3(0.0f,1.0f, 0.0f);
 
+    if (std::abs(glm::dot(globalUp, heading)) > 0.999f) return;
 
-    glm::vec3 numerator = glm::cross(globalUp,heading);
-
-    float denom = sqrt((numerator.x * numerator.x) + (numerator.y * numerator.y) + (numerator.z * numerator.z));
-    glm::vec3 left = numerator / denom;
-
-    glm::mat3 rotation = glm::mat3(-left,up,-heading);
+    glm::vec3 right = glm::normalize(glm::cross(globalUp, heading));
+    glm::vec3 newUp = glm::normalize(glm::cross(heading, right));
+    glm::mat3 rotation = glm::mat3(right, newUp, heading);
 
     glm::quat newQuat = glm::quat_cast(rotation);
 
@@ -77,10 +75,11 @@ void executeInstruction(const ParaInstructionTok* instruction){
     
     switch (token) {
         case Token::F: {
-            float distance = params[0];
+            float distance = params[0] * .1f;
 
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
+
             break;
         }
         case Token::G: {
@@ -88,6 +87,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
 
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
+
             break;
         }
         case Token::f: {
@@ -137,11 +137,12 @@ void executeInstruction(const ParaInstructionTok* instruction){
             break;
         }
         case Token::Width: {
-            nextTurtle.scale = params[0];
+            nextTurtle.scale = params[0] * 0.05f;
             break;
         }
         case Token::HorizontalRollAlign: {
             RollTurtleToHorizontal(&nextTurtle);
+            break;
         }
         case Token::NextColor: {
             break;
@@ -163,7 +164,9 @@ std::tuple<std::vector<glm::mat4>, std::vector<float>> executeInstructions(){
     std::vector<ParaInstructionTok> instructions = readInJSON(filePath);
     models.clear();
     widths.clear();
-
+    while (!turtleStack.empty()) {
+        turtleStack.pop();
+    }
     models.reserve(instructions.size());
     widths.reserve(instructions.size());
 

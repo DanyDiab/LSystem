@@ -1,7 +1,19 @@
-#version 330 core 
+#version 330 core
 
+in vec3 vNormal;
 out vec4 FragColor;
 
-void main(){
-    FragColor = vec4(1.0,1.0,1.0,1.0);
+void main() {
+    vec3 norm = normalize(vNormal);
+    
+    // Simple directional light pointing down and slightly forward
+    vec3 lightDir = normalize(vec3(0.3, 1.0, 0.5)); 
+    
+    // Calculate diffuse lighting with a baseline ambient floor of 0.3
+    float diff = max(dot(norm, lightDir), 0.3); 
+    
+    // Apply a standard wood-brown color
+    vec3 baseColor = vec3(0.5, 0.3, 0.1); 
+    
+    FragColor = vec4(baseColor * diff, 1.0);
 }

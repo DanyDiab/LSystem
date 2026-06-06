@@ -11,8 +11,6 @@
 #include <map>
 #include <cstdlib>
 #include <stdexcept>
-
-
 #include "./headers/Util.hpp"
 #include "./headers/tokens.hpp"
 #include "./headers/rule.hpp"
@@ -22,7 +20,7 @@ using json = nlohmann::json;
 
 int MAXDEPTH = 10;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
-const std::string inFile = "./systems/paraSystem.json";
+const std::string inFile = "./systems/paraSystem4.json";
 const std::string outFile = "./instructions.json";
 
 std::unordered_map<char, float> generateParamMapping(ParaInstruction* ins, std::vector<Rule> rules){
@@ -35,7 +33,7 @@ std::unordered_map<char, float> generateParamMapping(ParaInstruction* ins, std::
         if(rule.LHS->token != insTok) continue;
         
         std::vector<std::variant<float, std::string>> ruleParams = rule.LHS->params;
-        std::vector<std::variant<float, std::string>> insParams = ins->params;
+        std::vector<std::variant<float,  std::string>> insParams = ins->params;
         for(int i = 0; i < ruleParams.size(); i++){
 
             std::variant<float, std::string> ruleParam = ruleParams.at(i);
@@ -54,69 +52,47 @@ std::unordered_map<char, float> generateParamMapping(ParaInstruction* ins, std::
 }
 
 
-void parseOperations(std::vector<std::string> operatorSplit, std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr, std::vector<std::variant<float, std::string>>::iterator arrIdx){
-    float val1, val2;
-    
-    if(Util::isNumeric(operatorSplit[0])){
-        val1 = std::stof(operatorSplit[0]);
-    }
-    else{
-        val1 = paramMapping[operatorSplit[0][0]];
-    }
-    if(Util::isNumeric(operatorSplit[2])){
-        val2 = std::stof(operatorSplit[2]);
-    }
-    else{
-        val2 =  paramMapping[operatorSplit[2][0]];
-    }
-
-    sOutPtr->params.erase(arrIdx);
-
-    char op = operatorSplit[1][0];
-    float res;
-    switch(op){
-        case('*'):{
-            res = val1 * val2;
-            break;
+void cleanParams(std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr) {
+    for (size_t i = 0; i < sOutPtr->params.size(); i++) {
+        
+        if (std::holds_alternative<float>(sOutPtr->params[i])) {
+            continue; 
         }
-        case('+'):{
-            res = val1 + val2;
-            break;
-        }
-        case('/'):{
-            res = val1 / val2;
-            break;
-        }
-        case('^'):{
-            res = std::pow(val1, val2);
-            break;
-        }
-    }
-    sOutPtr->params.insert(arrIdx, res);
-}
 
-void cleanParams(std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr){
-    int paramCount = 0;
-
-    for(const auto& param : sOutPtr->params){
-
-        if(std::holds_alternative<float>(param)) continue;
-            
-        auto arrIdx = sOutPtr->params.begin() + paramCount;
-
-        const std::string* strPtr = std::get_if<std::string>(&param);
+        const std::string* strPtr = std::get_if<std::string>(&sOutPtr->params[i]);
         std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
-        // no operator was present
-        if(operatorSplit.size() == 1){
-            float val = paramMapping[operatorSplit[0][0]];
-            sOutPtr->params.erase(arrIdx);
-            sOutPtr->params.insert(arrIdx, val);
+        
+        if (operatorSplit.size() == 1) {
+            sOutPtr->params[i] = paramMapping[operatorSplit[0][0]];
+            continue;
         }
-        // operator was presesnt, must have 3 components
-        else{
-            parseOperations(operatorSplit,paramMapping,sOutPtr,arrIdx);
+
+        float val1;
+        if (!Util::isNumeric(operatorSplit[0])) {
+            val1 = paramMapping[operatorSplit[0][0]];
+        } else {
+            val1 = std::stof(operatorSplit[0]);
         }
-        paramCount++;
+
+        float val2;
+        if (!Util::isNumeric(operatorSplit[2])) {
+            val2 = paramMapping[operatorSplit[2][0]];
+        } else {
+            val2 = std::stof(operatorSplit[2]);
+        }
+
+        char op = operatorSplit[1][0];
+        float res = 0.0f;
+        
+        switch (op) {
+            case '*': { res = val1 * val2; break; }
+            case '+': { res = val1 + val2; break; }
+            case '-': { res = val1 - val2; break; } 
+            case '/': { res = val1 / val2; break; }
+            case '^': { res = std::pow(val1, val2); break; }
+        }
+        
+        sOutPtr->params[i] = res;
     }
 }
 
@@ -137,6 +113,7 @@ std::vector<ParaInstruction*> selectStochRHS(const Rule* rule){
         if(rand >= runningProb) continue;
         
         selectedOut = out.at(i);
+        break;
     }
 
     return selectedOut;
