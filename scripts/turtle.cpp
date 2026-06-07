@@ -75,7 +75,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
     
     switch (token) {
         case Token::F: {
-            float distance = params[0] * .1f;
+            float distance = params[0];
 
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);

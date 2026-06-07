@@ -4,7 +4,7 @@
 namespace LSystem {
 
     Camera::Camera() 
-        : pos(0.0f, 100.0f, 800.0f),
+        : pos(0.0f, 100.0f, 300.0f),
           front(0.0f, 0.0f, -1.0f),
           up(0.0f, 1.0f, 0.0f),
           yaw(-90.0f),
@@ -25,7 +25,7 @@ namespace LSystem {
     }
 
     void Camera::processKeyboard(unsigned char key, float deltaTime) {
-        float cameraSpeed = 150.0f * deltaTime;
+        float cameraSpeed = 50.0f * deltaTime;
         if (key == 'w' || key == 'W') {
             pos += cameraSpeed * front;
         }
@@ -47,7 +47,7 @@ namespace LSystem {
     }
 
     void Camera::processMouse(float xOffset, float yOffset) {
-        float sensitivity = 0.3f;
+        float sensitivity = 0.01f;
         xOffset *= sensitivity;
         yOffset *= sensitivity;
 
