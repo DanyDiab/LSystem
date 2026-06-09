@@ -12,8 +12,8 @@ void main() {
     // Calculate diffuse lighting with a baseline ambient floor of 0.3
     float diff = max(dot(norm, lightDir), 0.3); 
     
-    // Apply a standard wood-brown color
-    vec3 baseColor = vec3(0.5, 0.3, 0.1); 
+
+    vec3 baseColor = vec3(.31, .2, .06); 
     
     FragColor = vec4(baseColor * diff, 1.0);
 }

@@ -18,7 +18,7 @@ using namespace std;
 
 int MAXDEPTH = 10;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
-const std::string inFile = "./systems/paraSystem4.json";
+const std::string inFile = "./systems/2.7/4.json";
 const std::string outFile = "./instructions.json";
 
 std::unordered_map<char, float> generateParamMapping(ParaInstruction* ins, std::vector<Rule> rules){
@@ -155,10 +155,10 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
     return recurExpand(nextExpansion,rules, depth+1);
 }
 
-std::vector<ParaInstruction*> generateExpansion(std::tuple<ParaInstruction*, std::vector<Rule>, int> data){
-    ParaInstruction* axiom = std::get<0>(data);
+std::vector<ParaInstruction*> generateExpansion(std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> data){
+    std::vector<ParaInstruction*> axiom = std::get<0>(data);
 
-    std::vector<ParaInstruction*> curr = {new ParaInstruction(*axiom)}; 
+    std::vector<ParaInstruction*> curr(axiom); 
 
     std::vector<Rule> rules = std::get<1>(data);
 
@@ -166,7 +166,7 @@ std::vector<ParaInstruction*> generateExpansion(std::tuple<ParaInstruction*, std
     return recurExpand(curr,rules, 0);
 }
 
-void cleanUp(std::tuple<ParaInstruction*, std::vector<Rule>, int> data, std::vector<ParaInstruction*> expanded){
+void cleanUp(std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> data, std::vector<ParaInstruction*> expanded){
     for(const auto& ins : expanded){
         delete ins;
     }
@@ -181,14 +181,18 @@ void cleanUp(std::tuple<ParaInstruction*, std::vector<Rule>, int> data, std::vec
         }
     }
 
-    delete std::get<0>(data);
+    // std::vector<ParaInstruction*> axiom = std::get<0>(data);
+// 
+    // for(const auto& ins : axiom){
+        // delete ins;
+    // }
 }
 
 int main(int argc, char** argv){
     unsigned int currentTime = static_cast<unsigned int>(time(nullptr));
     srand(currentTime);
    
-    std::tuple<ParaInstruction*, std::vector<Rule>, int> data = parseJSON(inFile);
+    std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> data = parseJSON(inFile);
 
     MAXDEPTH = std::get<2>(data);
 
