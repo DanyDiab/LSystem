@@ -7,4 +7,7 @@
 #include "rule.hpp"
 #include "tokens.hpp"
 
-ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unordered_map<std::string, float> constants, const std::vector<char> operators = {'*', '+', '-', '/', '^'});
+inline std::vector<char> operators = {'*', '+', '-', '/', '^'};
+
+ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unordered_map<std::string, float> constants, const std::vector<char> operators);
+std::vector<ParaInstruction*> stringToInsVec(std::string toEncode, std::unordered_map<std::string, float> constants);

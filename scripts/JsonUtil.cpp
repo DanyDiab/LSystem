@@ -21,13 +21,12 @@ using json = nlohmann::json;
 const int defaultMaxDepth = 10;
 
 // <axiom, rules>
-std::tuple<ParaInstruction*, std::vector<Rule>, int> parseJSON(const string inFile){
+std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> parseJSON(const string inFile){
     std::ifstream file(inFile);
 
     std::vector<Rule> rules;
     std::unordered_map<std::string, float> constants;
-    std::vector<ParaInstruction*> RHSVec;
-    ParaInstruction* axiomIns;
+    std::vector<ParaInstruction*> axiomIns;
 
     int maxDepth = defaultMaxDepth;
     if (!file.is_open()){
@@ -46,14 +45,14 @@ std::tuple<ParaInstruction*, std::vector<Rule>, int> parseJSON(const string inFi
         constants.erase("MaxDepth");
     }
 
-    axiomIns = encodeInstruction(axiomStr, constants);
+    axiomIns = stringToInsVec(axiomStr, constants);
     
     json rulesJson = parsedData["rules"];
     for(json::iterator it = rulesJson.begin(); it != rulesJson.end(); it++){
         Rule rule;
         std::string keyString = it.key();
 
-        ParaInstruction* key = encodeInstruction(keyString, constants);
+        ParaInstruction* key = encodeInstruction(keyString, constants, operators);
 
         rule.LHS = key;
 
@@ -66,18 +65,11 @@ std::tuple<ParaInstruction*, std::vector<Rule>, int> parseJSON(const string inFi
             
             probs.push_back(prob);
             
-            
             std::string out = outcome["out"].get<std::string>();
             
-            std::vector<std::string> outTokens = Util::tokenize(out);
-
-            for(const auto& tok : outTokens){
-                ParaInstruction* paraIns = encodeInstruction(tok, constants);
-                RHSVec.push_back(paraIns);
-
-            }
-            rule.RHS.push_back(RHSVec);
-            RHSVec.clear();
+            std::vector<ParaInstruction*> insVec = stringToInsVec(out, constants);
+            
+            rule.RHS.push_back(insVec);
             
         }
 

@@ -1,10 +1,10 @@
 #include <unordered_map>
+#include <vector>
 
 #include "./headers/encoder.hpp"
 #include "./headers/rule.hpp"
 #include "./headers/tokens.hpp"
 #include "./headers/Util.hpp"
-
 
 ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unordered_map<std::string, float> constants, const std::vector<char> operators){
     ParaInstruction* paraIns = new ParaInstruction();
@@ -63,4 +63,15 @@ ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unorder
     paraIns->params = paramsVariant;
     return paraIns;
 
+}
+
+std::vector<ParaInstruction*> stringToInsVec(std::string toEncode, std::unordered_map<std::string, float> constants){
+    std::vector<ParaInstruction*> vec = std::vector<ParaInstruction*>();
+    std::vector<std::string> outTokens = Util::tokenize(toEncode);
+
+    for(const auto& tok : outTokens){
+        ParaInstruction* paraIns = encodeInstruction(tok, constants, operators);
+        vec.push_back(paraIns);
+    }
+    return vec;
 }

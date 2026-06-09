@@ -25,7 +25,7 @@ namespace LSystem {
     }
 
     void Camera::processKeyboard(unsigned char key, float deltaTime) {
-        float cameraSpeed = 50.0f * deltaTime;
+        float cameraSpeed = 150.0f * deltaTime;
         if (key == 'w' || key == 'W') {
             pos += cameraSpeed * front;
         }
