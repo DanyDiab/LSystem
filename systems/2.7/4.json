@@ -1,12 +1,12 @@
 {
     "globals" : {
         "MaxDepth": 6,
-        
-        "TropismX" : 0,
-        "TropismY" : -1,
-        "TropismZ" : 0,
 
-        "Susceptibility" : 0.22
+        "TropismX" : -0.61,
+        "TropismY" : 0.77,
+        "TropismZ" : -0.19,
+
+        "Susceptibility" : 0.40
     },
     "constants": {
         "d1": 180.00,
