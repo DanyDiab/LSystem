@@ -3,6 +3,7 @@
 #include "./headers/rule.hpp"
 
 #include <glm/ext/quaternion_geometric.hpp>
+#include <glm/ext/quaternion_trigonometric.hpp>
 #include <glm/fwd.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
@@ -22,12 +23,33 @@ std::stack<Turtle> turtleStack;
 std::vector<glm::mat4> models;
 std::vector<float> widths;
 
+glm::vec3 tropismDir;
+float susceptibility;
+
 const float scale = .1f; 
+
+void applyTropism(Turtle *turtle){
+    glm::quat tQuat = turtle->quaternion;
+
+    glm::vec3 heading = tQuat * glm::vec3(0.0f,0.0f, 1.0f);
+
+    glm::vec3 adjustment = glm::cross(heading, tropismDir) * susceptibility;
+
+    float magnitude = adjustment.length();
+
+    glm::vec3 normal = glm::normalize(adjustment);
+
+    glm::quat delta = glm::angleAxis(magnitude, normal);
+
+    turtle->quaternion = glm::normalize(tQuat * delta);
+    // rotate turtle quaterion by the adjustment
+}
 
 void moveTurtleForward(Turtle *turtle, float distance){
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 worldForward = turtle->quaternion * localForward;
     turtle->pos += worldForward * distance;
+    applyTropism(turtle);
 }
 
 void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
@@ -54,6 +76,8 @@ void RollTurtleToHorizontal(Turtle *turtle){
 
     turtle->quaternion = newQuat;
 }
+
+
 
 
 void recordTurtlePosition(Turtle *turtle, float distance){
@@ -206,6 +230,12 @@ std::vector<ParaInstructionTok> readInJSON(const std::string& filePath) {
     }
 
     const nlohmann::json& instructionsArray = jsonData["instructions"];
+
+    auto rawDir = jsonData["tropism"]["direction"];
+
+    tropismDir = {rawDir[0], rawDir[1], rawDir[2]};
+
+    susceptibility = jsonData["tropism"]["susceptibility"];
 
     if (!instructionsArray.is_array()) {
         std::cerr << "Error: 'instructions' key is not an array.\n";

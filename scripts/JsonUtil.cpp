@@ -59,7 +59,7 @@ std::shared_ptr<LSystemConfig> parseJSON(const string inFile){
 
         config->tropismDir = {x,y,z};
 
-        config->tropismSusceptibility = globals["tropsimSusceptibility"];
+        config->tropismSusceptibility = globals["Susceptibility"];
 
     }
 
