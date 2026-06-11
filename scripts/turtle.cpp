@@ -49,7 +49,6 @@ void moveTurtleForward(Turtle *turtle, float distance){
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 worldForward = turtle->quaternion * localForward;
     turtle->pos += worldForward * distance;
-    applyTropism(turtle);
 }
 
 void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
@@ -103,8 +102,10 @@ void executeInstruction(const ParaInstructionTok* instruction){
         
             float distance = params[0] * .02f;
             if(distance == 0) break;
+            
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
+            applyTropism(&nextTurtle);
 
             break;
         }
@@ -113,6 +114,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
 
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
+            applyTropism(&nextTurtle);
 
             break;
         }
@@ -120,12 +122,16 @@ void executeInstruction(const ParaInstructionTok* instruction){
             float distance = params[0];
 
             moveTurtleForward(&nextTurtle, distance);
+            applyTropism(&nextTurtle);
+
             break;
         }
         case Token::g: {
             float distance = params[0];
 
             moveTurtleForward(&nextTurtle, distance);
+            applyTropism(&nextTurtle);
+
             break;
         }
         case Token::Z: {
