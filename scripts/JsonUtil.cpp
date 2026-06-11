@@ -1,3 +1,4 @@
+#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <sstream>
@@ -12,6 +13,7 @@
 #include "./headers/Util.hpp"
 #include "./headers/encoder.hpp"
 #include "./headers/JsonUtil.hpp"
+#include "./headers/Config.hpp"
 #include <nlohmann/json_fwd.hpp>
 
 
@@ -21,17 +23,22 @@ using json = nlohmann::json;
 const int defaultMaxDepth = 10;
 
 // <axiom, rules>
-std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> parseJSON(const string inFile){
+std::shared_ptr<LSystemConfig> parseJSON(const string inFile){
     std::ifstream file(inFile);
 
     std::vector<Rule> rules;
     std::unordered_map<std::string, float> constants;
+    std::unordered_map<std::string, float> globals;
+    
     std::vector<ParaInstruction*> axiomIns;
-
-    int maxDepth = defaultMaxDepth;
+    std::shared_ptr<LSystemConfig> config = std::make_shared<LSystemConfig>();
+    
+    config->maxDepth = defaultMaxDepth;
+    std::vector<float> tropismDir;
+    float tropsimSusceptibility;
     if (!file.is_open()){
         cout << "file was not found or didnt open";
-        return std::make_tuple(axiomIns, rules, maxDepth);
+        return config;
     } 
 
     json parsedData;
@@ -39,14 +46,25 @@ std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> parseJSON(cons
 
     std::string axiomStr = parsedData["axiom"].get<std::string>();
     constants = parsedData["constants"].get<std::unordered_map<std::string, float>>();
+    globals = parsedData["globals"].get<std::unordered_map<std::string, float>>();
+
 // extract max dpeth if it exists
-    if(constants.find("MaxDepth") != constants.end()){
-        maxDepth = constants["MaxDepth"];
-        constants.erase("MaxDepth");
+    if(globals.find("MaxDepth") != constants.end()){
+        config->maxDepth = globals["MaxDepth"];
+    }
+    if(globals.find("TropismX") != globals.end()){
+        float x = globals["TropismX"];
+        float y = globals["TropismY"];
+        float z = globals["TropismZ"];
+
+        config->tropismDir = {x,y,z};
+
+        config->tropismSusceptibility = globals["tropsimSusceptibility"];
+
     }
 
-    axiomIns = stringToInsVec(axiomStr, constants);
-    
+    config->axiomIns = stringToInsVec(axiomStr, constants);
+
     json rulesJson = parsedData["rules"];
     for(json::iterator it = rulesJson.begin(); it != rulesJson.end(); it++){
         Rule rule;
@@ -76,14 +94,15 @@ std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> parseJSON(cons
         rule.probs = probs;
         rules.push_back(rule);
     }
+    config->rules = rules;
 
     file.close();
 
-    return std::make_tuple(axiomIns, rules, maxDepth);
+    return config;
 }
 
 
-int writeInstructionsToJSON(std::vector<ParaInstruction*> expanded, const string outFile) {
+int writeInstructionsToJSON(std::vector<ParaInstruction*> expanded, shared_ptr<LSystemConfig> config, const string outFile) {
     json data;
     json jsonTokens = json::array();
 
@@ -108,6 +127,9 @@ int writeInstructionsToJSON(std::vector<ParaInstruction*> expanded, const string
     }
 
     data["instructions"] = jsonTokens;
+    
+    data["tropism"]["direction"] = { config->tropismDir.x, config->tropismDir.y, config->tropismDir.z };
+    data["tropism"]["susceptibility"] = config->tropismSusceptibility;
 
     std::ofstream outputFile(outFile);
 

@@ -20,7 +20,7 @@ Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
 std::vector<glm::mat4> models;
-std::vector<float> widths; 
+std::vector<float> widths;
 
 const float scale = .1f; 
 

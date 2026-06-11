@@ -13,6 +13,7 @@
 #include "./headers/tokens.hpp"
 #include "./headers/rule.hpp"
 #include "./headers/JsonUtil.hpp"
+#include "headers/Config.hpp"
 
 using namespace std;
 
@@ -155,22 +156,22 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
     return recurExpand(nextExpansion,rules, depth+1);
 }
 
-std::vector<ParaInstruction*> generateExpansion(std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> data){
-    std::vector<ParaInstruction*> axiom = std::get<0>(data);
+std::vector<ParaInstruction*> generateExpansion(std::shared_ptr<LSystemConfig> data){
+    std::vector<ParaInstruction*> axiom = data->axiomIns;
 
     std::vector<ParaInstruction*> curr(axiom); 
 
-    std::vector<Rule> rules = std::get<1>(data);
+    std::vector<Rule> rules = data->rules;
 
 
     return recurExpand(curr,rules, 0);
 }
 
-void cleanUp(std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> data, std::vector<ParaInstruction*> expanded){
+void cleanUp(std::shared_ptr<LSystemConfig> data, std::vector<ParaInstruction*> expanded){
     for(const auto& ins : expanded){
         delete ins;
     }
-    std::vector<Rule>& rules = std::get<1>(data);
+    std::vector<Rule>& rules = data->rules;
     for(auto& rule : rules) {
         delete rule.LHS;
         
@@ -180,25 +181,19 @@ void cleanUp(std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> d
             }
         }
     }
-
-    // std::vector<ParaInstruction*> axiom = std::get<0>(data);
-// 
-    // for(const auto& ins : axiom){
-        // delete ins;
-    // }
 }
 
 int main(int argc, char** argv){
     unsigned int currentTime = static_cast<unsigned int>(time(nullptr));
     srand(currentTime);
    
-    std::tuple<std::vector<ParaInstruction*>, std::vector<Rule>, int> data = parseJSON(inFile);
+    std::shared_ptr<LSystemConfig> data = parseJSON(inFile);
 
-    MAXDEPTH = std::get<2>(data);
+    MAXDEPTH = data->maxDepth;
 
     std::vector<ParaInstruction*> expanded = generateExpansion(data);
     
-    writeInstructionsToJSON(expanded, outFile);
+    writeInstructionsToJSON(expanded, data, outFile);
 
     cleanUp(data,expanded);
 

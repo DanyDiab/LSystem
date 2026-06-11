@@ -1,12 +1,19 @@
 {
+    "globals" : {
+        "MaxDepth": 6,
+        
+        "TropismX" : 0,
+        "TropismY" : -1,
+        "TropismZ" : 0,
+
+        "Susceptibility" : 0.22
+    },
     "constants": {
-        "MaxDepth": 1,
         "d1": 180.00,
         "d2": 252.00,
         "a": 36.00,
         "lr": 1.070,
         "vr" : 1.732
-
     },
     "axiom": "!(1)F(200)/(45)A()",
     "rules": {
