@@ -2,27 +2,14 @@
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in mat4 aInstanceMatrix;
-layout (location = 5) in float aWidth;
-
-// layout(std430, binding = 2) buffer RadiiBuffer {
-//     float radiis[];
-// };
-
 
 uniform mat4 projection;
 uniform mat4 view;
 
+out vec3 vNormal;
 
-void main(){
-
-    float t = aPos.y;
-
-    int index = gl_InstanceID;
-    // float startingRadius = radiis[index];
-    // float endingRadius = radiis[index + 1];
-
-    // float currWidth = mix(startingRadius,endingRadius,t);
-
-    vec3 localPos = vec3(aPos.x * aWidth, aPos.y * aWidth, aPos.z);
-    gl_Position = projection * view * aInstanceMatrix * vec4(localPos, 1.0);
+void main() {
+    vec3 localNormal = normalize(vec3(aPos.x, aPos.y, 0.0));
+    vNormal = mat3(aInstanceMatrix) * localNormal;
+    gl_Position = projection * view * aInstanceMatrix * vec4(aPos, 1.0);
 }

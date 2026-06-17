@@ -1,0 +1,10 @@
+Things To Do:
+
+automatic scaling?
+
+iterations built into system
+
+camera looks at camera
+
+force pointer to center of screen and hide it to allow for scrolling
+

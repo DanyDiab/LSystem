@@ -4,133 +4,94 @@
 #include <fstream>
 #include <unordered_map>
 #include <utility>
-#include <nlohmann/json.hpp>
 #include <variant>
-#include <vector>
 #include <sstream>
 #include <map>
 #include <cstdlib>
 #include <stdexcept>
-
-
 #include "./headers/Util.hpp"
 #include "./headers/tokens.hpp"
 #include "./headers/rule.hpp"
+#include "./headers/JsonUtil.hpp"
+#include "headers/Config.hpp"
 
 using namespace std;
-using json = nlohmann::json;
 
 int MAXDEPTH = 10;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
-const std::string inFile = "./systems/paraSystem.json";
+const std::string inFile = "./systems/2.7/4.json";
 const std::string outFile = "./instructions.json";
 
-std::unordered_map<char, float> generateParamMapping(std::vector<ParaInstruction*> curr, std::vector<Rule> rules){
+std::unordered_map<char, float> generateParamMapping(ParaInstruction* ins, std::vector<Rule> rules){
     
     std::unordered_map<char, float> paramMapping;
-    std::unordered_map<char,int> seenTokens;
 
-    std::vector<char> keys;
-    std::vector<float> values;
+    char insTok = ins->token;
 
     for(const auto& rule : rules){
-        std::vector<std::variant<float, std::string>> params = rule.LHS->params;
-        seenTokens[rule.LHS->token] = 1;
-        for(const auto& param : params){
-            const std::string* strPtr = std::get_if<std::string>(&param);
-            char token = (*strPtr)[0];
-            keys.push_back(token);
+        if(rule.LHS->token != insTok) continue;
+        
+        std::vector<std::variant<float, std::string>> ruleParams = rule.LHS->params;
+        std::vector<std::variant<float,  std::string>> insParams = ins->params;
+        for(int i = 0; i < ruleParams.size(); i++){
+
+            std::variant<float, std::string> ruleParam = ruleParams.at(i);
+            std::variant<float, std::string> insParam = insParams.at(i);
+
+            const std::string* strPtr = std::get_if<std::string>(&ruleParam);
+            char key = (*strPtr)[0];
+
+            const float *val = std::get_if<float>(&insParam);
             
+            paramMapping[key] = *val;
         }
     }
-
-    for(const auto& ins : curr){
-        std::unordered_map<char, int>::const_iterator it = seenTokens.find(ins->token);
-
-        if(it == seenTokens.end()) continue;
-
-        std::vector<std::variant<float, std::string>> params = ins->params;
-        for(const auto& param : params){
-            const float *val = std::get_if<float>(&param);
-            values.push_back(*val);
-        }
-    }
-
-    for(int i = 0; i < keys.size(); i++){
-        char currKey = keys.at(i);
-        float currVal = values.at(i);
-
-        paramMapping[currKey] = currVal;
-    }
-
 
     return paramMapping;
 }
 
 
-void parseOperations(std::vector<std::string> operatorSplit, std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr, auto arrIdx){
-    float val1, val2;
-
-    if(Util::isNumeric(operatorSplit[0])){
-        val1 = std::stof(operatorSplit[0]);
-    }
-    else{
-        val1 = paramMapping[operatorSplit[0][0]];
-    }
-    if(Util::isNumeric(operatorSplit[2])){
-        val2 = std::stof(operatorSplit[2]);
-    }
-    else{
-        val2 =  paramMapping[operatorSplit[2][0]];
-    }
-
-    sOutPtr->params.erase(arrIdx);
-
-    char op = operatorSplit[1][0];
-    float res;
-    switch(op){
-        case('*'):{
-            res = val1 * val2;
-            break;
+void cleanParams(std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr) {
+    for (size_t i = 0; i < sOutPtr->params.size(); i++) {
+        
+        if (std::holds_alternative<float>(sOutPtr->params[i])) {
+            continue; 
         }
-        case('+'):{
-            res = val1 + val2;
-            break;
-        }
-        case('/'):{
-            res = val1 / val2;
-            break;
-        }
-        case('^'):{
-            res = std::pow(val1, val2);
-            break;
-        }
-    }
-    sOutPtr->params.insert(arrIdx, res);
-}
 
-void cleanParams(std::unordered_map<char, float> paramMapping, ParaInstruction* sOutPtr){
-    int paramCount = 0;
-
-    for(const auto& param : sOutPtr->params){
-
-        if(std::holds_alternative<float>(param)) continue;
-            
-        auto arrIdx = sOutPtr->params.begin() + paramCount;
-
-        const std::string* strPtr = std::get_if<std::string>(&param);
+        const std::string* strPtr = std::get_if<std::string>(&sOutPtr->params[i]);
         std::vector<std::string> operatorSplit = Util::splitString(*strPtr, operators, true);
-        // no operator was present
-        if(operatorSplit.size() == 1){
-            float val = paramMapping[operatorSplit[0][0]];
-            sOutPtr->params.erase(arrIdx);
-            sOutPtr->params.insert(arrIdx, val);
+        
+        if (operatorSplit.size() == 1) {
+            sOutPtr->params[i] = paramMapping[operatorSplit[0][0]];
+            continue;
         }
-        // operator was presesnt, must have 3 components
-        else{
-            parseOperations(operatorSplit,paramMapping,sOutPtr,arrIdx);
+
+        float val1;
+        if (!Util::isNumeric(operatorSplit[0])) {
+            val1 = paramMapping[operatorSplit[0][0]];
+        } else {
+            val1 = std::stof(operatorSplit[0]);
         }
-        paramCount++;
+
+        float val2;
+        if (!Util::isNumeric(operatorSplit[2])) {
+            val2 = paramMapping[operatorSplit[2][0]];
+        } else {
+            val2 = std::stof(operatorSplit[2]);
+        }
+
+        char op = operatorSplit[1][0];
+        float res = 0.0f;
+        
+        switch (op) {
+            case '*': { res = val1 * val2; break; }
+            case '+': { res = val1 + val2; break; }
+            case '-': { res = val1 - val2; break; } 
+            case '/': { res = val1 / val2; break; }
+            case '^': { res = std::pow(val1, val2); break; }
+        }
+        
+        sOutPtr->params[i] = res;
     }
 }
 
@@ -151,17 +112,16 @@ std::vector<ParaInstruction*> selectStochRHS(const Rule* rule){
         if(rand >= runningProb) continue;
         
         selectedOut = out.at(i);
+        break;
     }
 
     return selectedOut;
 }
 
-// for each instruciton
-// if params contains string, create mapping 
 
 std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, std::vector<Rule> rules, int depth){
     if(depth == MAXDEPTH) return curr;
-    std::unordered_map<char, float> paramMapping = generateParamMapping(curr, rules);
+
 
     std::vector<ParaInstruction*> nextExpansion;
     for(const auto& currIns : curr){
@@ -169,6 +129,8 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
         bool foundExpansion = false;
         for(const auto& rule : rules){
             if(rule.LHS->token != currIns->token) continue;
+            
+            std::unordered_map<char, float> paramMapping = generateParamMapping(currIns, rules);
 
             foundExpansion = true;
 
@@ -194,188 +156,22 @@ std::vector<ParaInstruction*> recurExpand(std::vector<ParaInstruction*> curr, st
     return recurExpand(nextExpansion,rules, depth+1);
 }
 
-std::vector<ParaInstruction*> generateExpansion(std::tuple<ParaInstruction*, std::vector<Rule>> data){
-    ParaInstruction* axiom = std::get<0>(data);
-    std::vector<ParaInstruction*> curr = {new ParaInstruction(*axiom)}; 
+std::vector<ParaInstruction*> generateExpansion(std::shared_ptr<LSystemConfig> data){
+    std::vector<ParaInstruction*> axiom = data->axiomIns;
 
-    std::vector<Rule> rules = std::get<1>(data);
+    std::vector<ParaInstruction*> curr(axiom); 
+
+    std::vector<Rule> rules = data->rules;
 
 
     return recurExpand(curr,rules, 0);
 }
 
-ParaInstruction* encodeInstruction(std::string instructionToEncode, std::unordered_map<std::string, float> constants){
-    ParaInstruction* paraIns = new ParaInstruction();
-    
-    std::vector<char> delim = {'('};
-    std::vector<char> paramDelim = {',', ')', ' '};
-
-    std::vector<std::variant<float, std::string>> paramsVariant;
-
-    std::vector<std::string> split = Util::splitString(instructionToEncode, delim);
-
-    char token = split[0][0];
-
-    if(split.size() == 1){
-        paraIns->token = token;
-        paraIns->params = paramsVariant;
-
-        return paraIns;
-    }
-    std::string params = split[1];
-    std::vector<std::string> paramSplit = Util::splitString(params, paramDelim);
-
-    for(const auto& param : paramSplit){
-        if(Util::isNumeric(param)){
-            float paramF = std::stof(param);
-            paramsVariant.push_back(paramF);
-        }
-        else{
-            // split by operator
-            std::vector<std::string> paramOpSplit = Util::splitString(param, operators, true);
-            std::string fullParam = "";
-            bool skipped = false;
-            for(const auto& operand : paramOpSplit){
-                std::unordered_map<std::string, float>::const_iterator it = constants.find(operand);
-                if(it == constants.end()){
-                    fullParam += operand;
-                }
-                else{
-                    float replacement = it->second;
-                    // if this is the only parameter, dont convert to a string
-                    if(paramOpSplit.size() == 1){
-                        skipped = true;
-                        paramsVariant.push_back(replacement);
-                        break;
-                    }
-                    fullParam += std::to_string(replacement);
-                }
-            }
-            if(!skipped){
-                paramsVariant.push_back(fullParam);
-            }
-        }
-    }
-
-    paraIns->token = token;
-    paraIns->params = paramsVariant;
-    return paraIns;
-
-}
-
-// <axiom, rules>
-std::tuple<ParaInstruction*, std::vector<Rule>> parseJSON(){
-    std::ifstream file(inFile);
-
-    std::vector<Rule> rules;
-    std::unordered_map<std::string, float> constants;
-    std::vector<ParaInstruction*> RHSVec;
-    ParaInstruction* axiomIns;
-    if (!file.is_open()){
-        cout << "file was not found or didnt open";
-        return std::make_tuple(axiomIns, rules);
-    } 
-
-    json parsedData;
-    file >> parsedData;
-
-    std::string axiomStr = parsedData["axiom"].get<std::string>();
-    constants = parsedData["constants"].get<std::unordered_map<std::string, float>>();
-
-
-    axiomIns = encodeInstruction(axiomStr, constants);
-    
-    json rulesJson = parsedData["rules"];
-    for(json::iterator it = rulesJson.begin(); it != rulesJson.end(); it++){
-        Rule rule;
-        std::string keyString = it.key();
-
-        ParaInstruction* key = encodeInstruction(keyString, constants);
-
-        rule.LHS = key;
-
-        json outcomes = it.value();
-
-        std::vector<float> probs;
-        std::vector<std::string> outs;
-        for(const auto& outcome : outcomes){
-            float prob = outcome["prob"].get<float>();
-            
-            probs.push_back(prob);
-            
-            
-            std::string out = outcome["out"].get<std::string>();
-            
-            std::vector<std::string> outTokens = Util::tokenize(out);
-
-            for(const auto& tok : outTokens){
-                ParaInstruction* paraIns = encodeInstruction(tok, constants);
-                RHSVec.push_back(paraIns);
-
-            }
-            rule.RHS.push_back(RHSVec);
-            RHSVec.clear();
-            
-        }
-
-        rule.probs = probs;
-        rules.push_back(rule);
-    }
-
-    file.close();
-
-    return std::make_tuple(axiomIns, rules);
-}
-
-int writeInstructionsToJSON(std::vector<ParaInstruction*> expanded) {
-    json data;
-    json jsonTokens = json::array();
-
-    for (ParaInstruction* instr : expanded) {
-        json instructionJson;
-        
-        std::string tokenStr(1, instr->token);
-        instructionJson["token"] = tokenStr;
-
-        json paramsJson = json::array();
-        
-        for (std::variant<float, std::string>& param : instr->params) {
-            if (std::holds_alternative<float>(param)) {
-                paramsJson.push_back(std::get<float>(param));
-            } else if (std::holds_alternative<std::string>(param)) {
-                paramsJson.push_back(std::get<std::string>(param));
-            }
-        }
-        
-        instructionJson["params"] = paramsJson;
-        jsonTokens.push_back(instructionJson);
-    }
-
-    data["instructions"] = jsonTokens;
-
-    std::ofstream outputFile(outFile);
-
-    if (!outputFile.is_open()) return 1;
-
-    outputFile << data.dump(4);
-    outputFile.close();
-    
-    return 0;
-}
-
-int main(int argc, char** argv){
-    unsigned int currentTime = static_cast<unsigned int>(time(nullptr));
-    srand(currentTime);
-    std::tuple<ParaInstruction*, std::vector<Rule>> data = parseJSON();
-    std::vector<ParaInstruction*> expanded = generateExpansion(data);
-
-    writeInstructionsToJSON(expanded);
-    
+void cleanUp(std::shared_ptr<LSystemConfig> data, std::vector<ParaInstruction*> expanded){
     for(const auto& ins : expanded){
         delete ins;
     }
-
-    std::vector<Rule>& rules = std::get<1>(data);
+    std::vector<Rule>& rules = data->rules;
     for(auto& rule : rules) {
         delete rule.LHS;
         
@@ -385,8 +181,21 @@ int main(int argc, char** argv){
             }
         }
     }
+}
 
-    delete std::get<0>(data);
+int main(int argc, char** argv){
+    unsigned int currentTime = static_cast<unsigned int>(time(nullptr));
+    srand(currentTime);
+   
+    std::shared_ptr<LSystemConfig> data = parseJSON(inFile);
+
+    MAXDEPTH = data->maxDepth;
+
+    std::vector<ParaInstruction*> expanded = generateExpansion(data);
+    
+    writeInstructionsToJSON(expanded, data, outFile);
+
+    cleanUp(data,expanded);
 
     return 0;
 }

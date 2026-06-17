@@ -47,7 +47,7 @@ namespace LSystem {
     }
 
     void Camera::processMouse(float xOffset, float yOffset) {
-        float sensitivity = 0.1f;
+        float sensitivity = 0.01f;
         xOffset *= sensitivity;
         yOffset *= sensitivity;
 

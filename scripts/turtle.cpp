@@ -3,6 +3,7 @@
 #include "./headers/rule.hpp"
 
 #include <glm/ext/quaternion_geometric.hpp>
+#include <glm/ext/quaternion_trigonometric.hpp>
 #include <glm/fwd.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
@@ -20,19 +21,41 @@ Turtle turtle;
 Turtle nextTurtle;
 std::stack<Turtle> turtleStack;
 std::vector<glm::mat4> models;
-std::vector<float> widths; 
-float lineWidth = 1;
+std::vector<float> widths;
+
+glm::vec3 tropismDir;
+float susceptibility;
+
+const float scale = .1f; 
+
+void applyTropism(Turtle *turtle){
+    glm::quat tQuat = turtle->quaternion;
+
+    glm::vec3 heading = tQuat * glm::vec3(0.0f,0.0f, 1.0f);
+
+    glm::vec3 adjustment = glm::cross(heading, tropismDir) * susceptibility;
+
+    float magnitude = adjustment.length();
+
+    glm::vec3 normal = glm::normalize(adjustment);
+
+    glm::quat delta = glm::angleAxis(magnitude, normal);
+
+    turtle->quaternion = glm::normalize(tQuat * delta);
+    // rotate turtle quaterion by the adjustment
+}
 
 void moveTurtleForward(Turtle *turtle, float distance){
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 worldForward = turtle->quaternion * localForward;
     turtle->pos += worldForward * distance;
+    applyTropism(turtle);
 }
 
 void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
     float angleRadians = angle * DEGTORAD;
     glm::quat rotation = glm::angleAxis(angleRadians, axis);
-    turtle->quaternion = turtle->quaternion * rotation;
+    turtle->quaternion = glm::normalize(turtle->quaternion * rotation);
 }
 
 void RollTurtleToHorizontal(Turtle *turtle){
@@ -41,21 +64,18 @@ void RollTurtleToHorizontal(Turtle *turtle){
     glm::quat tQuat = turtle->quaternion;
     
     glm::vec3 heading = tQuat * glm::vec3(0.0f,0.0f, 1.0f);
-    glm::vec3 up = tQuat * glm::vec3(0.0f,1.0f, 1.0f);
+    glm::vec3 up = tQuat * glm::vec3(0.0f,1.0f, 0.0f);
 
+    if (std::abs(glm::dot(globalUp, heading)) > 0.999f) return;
 
-    glm::vec3 numerator = glm::cross(globalUp,heading);
-
-    float denom = sqrt((numerator.x * numerator.x) + (numerator.y * numerator.y) + (numerator.z * numerator.z));
-    glm::vec3 left = numerator / denom;
-
-    glm::mat3 rotation = glm::mat3(-left,up,-heading);
+    glm::vec3 right = glm::normalize(glm::cross(globalUp, heading));
+    glm::vec3 newUp = glm::normalize(glm::cross(heading, right));
+    glm::mat3 rotation = glm::mat3(right, newUp, heading);
 
     glm::quat newQuat = glm::quat_cast(rotation);
 
     turtle->quaternion = newQuat;
 }
-
 
 void recordTurtlePosition(Turtle *turtle, float distance){
     float scale = turtle->scale;
@@ -77,10 +97,12 @@ void executeInstruction(const ParaInstructionTok* instruction){
     
     switch (token) {
         case Token::F: {
-            float distance = params[0];
-
+        
+            float distance = params[0] * .02f;
+            if(distance == 0) break;
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
+
             break;
         }
         case Token::G: {
@@ -137,11 +159,14 @@ void executeInstruction(const ParaInstructionTok* instruction){
             break;
         }
         case Token::Width: {
-            nextTurtle.scale = params[0];
+            float newWidth = params[0] * scale;
+            if(newWidth < .000001) return;
+            nextTurtle.scale = newWidth;
             break;
         }
         case Token::HorizontalRollAlign: {
             RollTurtleToHorizontal(&nextTurtle);
+            break;
         }
         case Token::NextColor: {
             break;
@@ -163,7 +188,9 @@ std::tuple<std::vector<glm::mat4>, std::vector<float>> executeInstructions(){
     std::vector<ParaInstructionTok> instructions = readInJSON(filePath);
     models.clear();
     widths.clear();
-
+    while (!turtleStack.empty()) {
+        turtleStack.pop();
+    }
     models.reserve(instructions.size());
     widths.reserve(instructions.size());
 
@@ -199,6 +226,12 @@ std::vector<ParaInstructionTok> readInJSON(const std::string& filePath) {
     }
 
     const nlohmann::json& instructionsArray = jsonData["instructions"];
+
+    auto rawDir = jsonData["tropism"]["direction"];
+
+    tropismDir = {rawDir[0], rawDir[1], rawDir[2]};
+
+    susceptibility = jsonData["tropism"]["susceptibility"];
 
     if (!instructionsArray.is_array()) {
         std::cerr << "Error: 'instructions' key is not an array.\n";
