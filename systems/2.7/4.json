@@ -3,7 +3,7 @@
         "MaxDepth": 6,
 
         "TropismX" : -0.61,
-        "TropismY" : 0.77,
+        "TropismY" : -0.77,
         "TropismZ" : -0.19,
 
         "Susceptibility" : 0.40

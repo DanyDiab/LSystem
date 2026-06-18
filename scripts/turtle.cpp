@@ -28,28 +28,27 @@ float susceptibility;
 
 const float scale = .1f; 
 
-void applyTropism(Turtle *turtle){
+void applyTropism(Turtle *turtle) {
     glm::quat tQuat = turtle->quaternion;
+    glm::vec3 heading = tQuat * glm::vec3(0.0f, 0.0f, 1.0f);
+    
+    // Calculate the cross product
+    glm::vec3 crossAxis = glm::cross(heading, tropismDir);
+    float sinTheta = glm::length(crossAxis);
 
-    glm::vec3 heading = tQuat * glm::vec3(0.0f,0.0f, 1.0f);
-
-    glm::vec3 adjustment = glm::cross(heading, tropismDir) * susceptibility;
-
-    float magnitude = adjustment.length();
-
-    glm::vec3 normal = glm::normalize(adjustment);
-
-    glm::quat delta = glm::angleAxis(magnitude, normal);
-
+    float angle = sinTheta * susceptibility;
+        
+    glm::vec3 normal = crossAxis / sinTheta;
+    
+    glm::quat delta = glm::angleAxis(angle, normal);
     turtle->quaternion = glm::normalize(tQuat * delta);
-    // rotate turtle quaterion by the adjustment
 }
+
 
 void moveTurtleForward(Turtle *turtle, float distance){
     glm::vec3 localForward = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 worldForward = turtle->quaternion * localForward;
     turtle->pos += worldForward * distance;
-    applyTropism(turtle);
 }
 
 void rotateTurtle(Turtle *turtle, glm::vec3 axis, float angle){
@@ -100,6 +99,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
         
             float distance = params[0] * .02f;
             if(distance == 0) break;
+            applyTropism(&nextTurtle);
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
 
@@ -107,7 +107,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
         }
         case Token::G: {
             float distance = params[0];
-
+            applyTropism(&nextTurtle);
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
             break;
@@ -230,6 +230,7 @@ std::vector<ParaInstructionTok> readInJSON(const std::string& filePath) {
     auto rawDir = jsonData["tropism"]["direction"];
 
     tropismDir = {rawDir[0], rawDir[1], rawDir[2]};
+    tropismDir = glm::normalize(tropismDir);
 
     susceptibility = jsonData["tropism"]["susceptibility"];
 
