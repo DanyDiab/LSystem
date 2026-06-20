@@ -15,6 +15,7 @@ struct Turtle {
     float scale;
 };
 
+
 void moveTurtleForward(Turtle *turtle, float distance);
 void recordTurtlePosition(Turtle *turtle, float distance);
 void executeInstruction(const ParaInstructionTok* instruction);

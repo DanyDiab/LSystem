@@ -22,6 +22,8 @@ namespace LSystem {
         glm::mat4 getProjectionMatrix(float aspect);
         void processKeyboard(unsigned char key, float deltaTime);
         void processMouse(float xOffset, float yOffset);
+        void processMouseMovement(float xpos, float ypos);
+        void processSpecialKeyboard(int key, float deltaTime);
     private:
         void updateCameraVectors();
     };

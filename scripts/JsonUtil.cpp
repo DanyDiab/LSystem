@@ -44,15 +44,27 @@ std::shared_ptr<LSystemConfig> parseJSON(const string inFile){
     json parsedData;
     file >> parsedData;
 
+    bool foundGlobals = false;
+    bool foundConstants = false;
+
     std::string axiomStr = parsedData["axiom"].get<std::string>();
-    constants = parsedData["constants"].get<std::unordered_map<std::string, float>>();
-    globals = parsedData["globals"].get<std::unordered_map<std::string, float>>();
+
+
+    if(parsedData.find("constants") != parsedData.end()){
+        foundConstants = true;
+        constants = parsedData["constants"].get<std::unordered_map<std::string, float>>();
+    }
+    
+    if(parsedData.find("globals") != parsedData.end()){
+        foundGlobals = true;
+        globals = parsedData["globals"].get<std::unordered_map<std::string, float>>();
+    }
 
 // extract max dpeth if it exists
-    if(globals.find("MaxDepth") != constants.end()){
+    if(foundGlobals && globals.find("MaxDepth") != globals.end()){
         config->maxDepth = globals["MaxDepth"];
     }
-    if(globals.find("TropismX") != globals.end()){
+    if(foundGlobals && globals.find("TropismX") != globals.end()){
         float x = globals["TropismX"];
         float y = globals["TropismY"];
         float z = globals["TropismZ"];

@@ -1,4 +1,5 @@
 #include "./headers/Camera.hpp"
+#include <GL/freeglut.h>
 #include <cmath>
 
 namespace LSystem {
@@ -48,6 +49,48 @@ namespace LSystem {
 
     void Camera::processMouse(float xOffset, float yOffset) {
         float sensitivity = 0.01f;
+        xOffset *= sensitivity;
+        yOffset *= sensitivity;
+
+        yaw += xOffset;
+        pitch += yOffset;
+
+        updateCameraVectors();
+    }
+
+    void Camera::processSpecialKeyboard(int key, float deltaTime) {
+        float rotateSpeed = 80.0f * deltaTime; 
+        
+        if (key == GLUT_KEY_LEFT) {
+            yaw -= rotateSpeed;
+        }
+        if (key == GLUT_KEY_RIGHT) {
+            yaw += rotateSpeed;
+        }
+        if (key == GLUT_KEY_UP) {
+            pitch += rotateSpeed;
+        }
+        if (key == GLUT_KEY_DOWN) {
+            pitch -= rotateSpeed;
+        }
+
+        updateCameraVectors();
+    }
+
+    void Camera::processMouseMovement(float xpos, float ypos) {
+        if (firstMouse) {
+            lastX = xpos;
+            lastY = ypos;
+            firstMouse = false;
+        }
+
+        float xOffset = xpos - lastX;
+        float yOffset = lastY - ypos; 
+
+        lastX = xpos;
+        lastY = ypos;
+
+        float sensitivity = 0.1f; 
         xOffset *= sensitivity;
         yOffset *= sensitivity;
 

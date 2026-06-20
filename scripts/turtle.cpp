@@ -26,16 +26,17 @@ std::vector<float> widths;
 glm::vec3 tropismDir;
 float susceptibility;
 
-const float scale = .1f; 
+
 
 void applyTropism(Turtle *turtle) {
+    if(tropismDir == glm::vec3(0,0,0)) return;
     glm::quat tQuat = turtle->quaternion;
     glm::vec3 heading = tQuat * glm::vec3(0.0f, 0.0f, 1.0f);
     
     // Calculate the cross product
     glm::vec3 crossAxis = glm::cross(heading, tropismDir);
     float sinTheta = glm::length(crossAxis);
-
+    if(sinTheta < .01f) return;
     float angle = sinTheta * susceptibility;
         
     glm::vec3 normal = crossAxis / sinTheta;
@@ -86,8 +87,11 @@ void recordTurtlePosition(Turtle *turtle, float distance){
 
     model = glm::scale(model, glm::vec3(scale, scale, distance));
 
+    
     models.push_back(model);
     widths.push_back(scale);
+
+
 }
 
 void executeInstruction(const ParaInstructionTok* instruction){
@@ -97,7 +101,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
     switch (token) {
         case Token::F: {
         
-            float distance = params[0] * .02f;
+            float distance = params[0];
             if(distance == 0) break;
             applyTropism(&nextTurtle);
             recordTurtlePosition(&nextTurtle, distance);
@@ -159,7 +163,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
             break;
         }
         case Token::Width: {
-            float newWidth = params[0] * scale;
+            float newWidth = params[0];
             if(newWidth < .000001) return;
             nextTurtle.scale = newWidth;
             break;
