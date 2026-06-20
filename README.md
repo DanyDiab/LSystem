@@ -1,17 +1,32 @@
-# LSystem
+# Dany's L System Generator
 A custom L system generator and Parser/Renderer. This is built in C++ and openGL.
+
+The engine interprets a **formal string-rewriting grammar** to procedurally generate complex organic structures, utilizing a custom parser to evaluate parametric and stochastic production rules.
 
 ## Features
 
-- Stochastic Generation
-- 3D Generation
+### Generation Methods
 
-## Working On
+- Stochastic
+- Parametric
+- 3D
+- 2D
 
-- Parametric Generation
+### Organic Behavior
+- Tropism
+- Quaternion-based Turtle Rotations
+- Surface-Alignment
 
-### To Do
+### Key Rendering Implementations
+- GPU Instanced Cylinder Rendering
+- Modern OpenGL Pipeline (VAO/VBO Buffer Management)
 
-- GenerateParamMapping needs reworking, dopesnt work whne thewere are multiple rules using same parameters
+### Future Ideas
+- Make a forest of trees
+- Add leaves so the trees are not all dead XD
 
+## Learn More!
 
+This is where I learned and got inspiration for this project! (The rabbit hole is deep, and this just touches the surface)
+
+https://algorithmicbotany.org/papers/abop/abop.pdf
