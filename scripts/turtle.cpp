@@ -26,7 +26,7 @@ std::vector<float> widths;
 glm::vec3 tropismDir;
 float susceptibility;
 
-
+const float scale = 0.001f;
 
 void applyTropism(Turtle *turtle) {
     if(tropismDir == glm::vec3(0,0,0)) return;
@@ -101,7 +101,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
     switch (token) {
         case Token::F: {
         
-            float distance = params[0];
+            float distance = params[0] * scale;
             if(distance == 0) break;
             applyTropism(&nextTurtle);
             recordTurtlePosition(&nextTurtle, distance);
@@ -110,7 +110,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
             break;
         }
         case Token::G: {
-            float distance = params[0];
+            float distance = params[0] * scale;
             applyTropism(&nextTurtle);
             recordTurtlePosition(&nextTurtle, distance);
             moveTurtleForward(&nextTurtle, distance);
@@ -163,7 +163,7 @@ void executeInstruction(const ParaInstructionTok* instruction){
             break;
         }
         case Token::Width: {
-            float newWidth = params[0];
+            float newWidth = params[0] * scale;
             if(newWidth < .000001) return;
             nextTurtle.scale = newWidth;
             break;

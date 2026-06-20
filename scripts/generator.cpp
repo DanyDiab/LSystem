@@ -19,7 +19,7 @@ using namespace std;
 
 int MAXDEPTH = 10;
 const std::vector<char> operators = {'*', '+', '-', '/', '^'};
-const std::string inFile = "./systems/2.7/3.json";
+const std::string inFile = "./systems/2.7/5.json";
 const std::string outFile = "./instructions.json";
 
 std::unordered_map<char, float> generateParamMapping(ParaInstruction* ins, std::vector<Rule> rules){
